@@ -22,7 +22,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "iis2dlpc_reg.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -32,6 +32,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+#define IIS2_DLPC_BUS hspi1
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -45,7 +46,7 @@ SPI_HandleTypeDef hspi1;
 UART_HandleTypeDef huart5;
 
 /* USER CODE BEGIN PV */
-
+static uint8_t whoami = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -54,7 +55,8 @@ static void MX_GPIO_Init(void);
 static void MX_SPI1_Init(void);
 static void MX_USART5_UART_Init(void);
 /* USER CODE BEGIN PFP */
-
+static int32_t platform_write	( void *handle , uint8_t reg , const uint8_t *bufp , uint16_t len );
+static int32_t platform_read	( void *handle , uint8_t reg , uint8_t *bufp , uint16_t len );
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -93,6 +95,10 @@ int main(void)
   MX_SPI1_Init();
   MX_USART5_UART_Init();
   /* USER CODE BEGIN 2 */
+	stmdev_ctx_t iis2dlpc_ctx;
+	iis2dlpc_ctx.write_reg = platform_write;
+	iis2dlpc_ctx.read_reg = platform_read;
+	iis2dlpc_ctx.handle = &IIS2_DLPC_BUS;
 
   /* USER CODE END 2 */
 
@@ -100,6 +106,9 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+	iis2dlpc_device_id_get ( &iis2dlpc_ctx , &whoami );
+	if ( whoami != IIS2DLPC_ID)
+		HAL_Delay ( 1000 );
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -261,7 +270,44 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+/*
+ * @brief  Write generic device register (platform dependent)
+ *
+ * @param  handle    customizable argument. In this examples is used in
+ *                   order to select the correct sensor bus handler.
+ * @param  reg       register to write
+ * @param  bufp      pointer to data to write in register reg
+ * @param  len       number of consecutive register to write
+ *
+ */
+static int32_t platform_write ( void *handle , uint8_t reg , const uint8_t *bufp , uint16_t len )
+{
+	HAL_GPIO_WritePin	( IIS2DLPC_CS_GPIO_Port , IIS2DLPC_CS_Pin , GPIO_PIN_RESET );
+	HAL_SPI_Transmit	( handle , &reg , 1 , 1000 );
+	HAL_SPI_Transmit	( handle , (uint8_t*) bufp , len , 1000 );
+	HAL_GPIO_WritePin	( IIS2DLPC_CS_GPIO_Port , IIS2DLPC_CS_Pin , GPIO_PIN_SET);
+	return 0;
+}
 
+/*
+ * @brief  Read generic device register (platform dependent)
+ *
+ * @param  handle    customizable argument. In this examples is used in
+ *                   order to select the correct sensor bus handler.
+ * @param  reg       register to read
+ * @param  bufp      pointer to buffer that store the data read
+ * @param  len       number of consecutive register to read
+ *
+ */
+static int32_t platform_read ( void *handle , uint8_t reg , uint8_t *bufp , uint16_t len )
+{
+	reg |= 0x80;
+	HAL_GPIO_WritePin ( IIS2DLPC_CS_GPIO_Port , IIS2DLPC_CS_Pin , GPIO_PIN_RESET);
+	HAL_SPI_Transmit ( handle , &reg , 1 , 1000 );
+	HAL_SPI_Receive ( handle , bufp , len , 1000 );
+	HAL_GPIO_WritePin ( IIS2DLPC_CS_GPIO_Port , IIS2DLPC_CS_Pin , GPIO_PIN_SET);
+	return 0;
+}
 /* USER CODE END 4 */
 
 /**
