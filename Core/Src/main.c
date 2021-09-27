@@ -107,8 +107,10 @@ int main(void)
   while (1)
   {
 	iis2dlpc_device_id_get ( &iis2dlpc_ctx , &whoami );
-	if ( whoami != IIS2DLPC_ID)
-		HAL_Delay ( 1000 );
+	if ( whoami == IIS2DLPC_ID)
+		HAL_UART_Transmit ( &huart5, &whoami , 1 , 1000 );
+	HAL_Delay ( 1000 );
+	HAL_UART_Transmit ( &huart5, &whoami , 1 , 1000 );
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -209,7 +211,7 @@ static void MX_USART5_UART_Init(void)
 
   /* USER CODE END USART5_Init 1 */
   huart5.Instance = USART5;
-  huart5.Init.BaudRate = 115200;
+  huart5.Init.BaudRate = 9600;
   huart5.Init.WordLength = UART_WORDLENGTH_8B;
   huart5.Init.StopBits = UART_STOPBITS_1;
   huart5.Init.Parity = UART_PARITY_NONE;
