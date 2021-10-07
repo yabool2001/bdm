@@ -32,7 +32,8 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define IIS2_DLPC_BUS hspi1
+#define IIS2DLPC_BUS hspi1
+#define DBG huart5
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -46,7 +47,7 @@ SPI_HandleTypeDef hspi1;
 UART_HandleTypeDef huart5;
 
 /* USER CODE BEGIN PV */
-static uint8_t whoami = 0;
+static uint8_t whoami = 0, rst = 0 ;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -98,7 +99,7 @@ int main(void)
 	stmdev_ctx_t iis2dlpc_ctx;
 	iis2dlpc_ctx.write_reg = platform_write;
 	iis2dlpc_ctx.read_reg = platform_read;
-	iis2dlpc_ctx.handle = &IIS2_DLPC_BUS;
+	iis2dlpc_ctx.handle = &IIS2DLPC_BUS;
 
   /* USER CODE END 2 */
 
@@ -106,12 +107,21 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	iis2dlpc_device_id_get ( &iis2dlpc_ctx , &whoami );
-	if ( whoami == IIS2DLPC_ID)
-		HAL_UART_Transmit ( &huart5, &whoami , 1 , 1000 );
-	HAL_Delay ( 1000 );
-	HAL_UART_Transmit ( &huart5, &whoami , 1 , 1000 );
-    /* USER CODE END WHILE */
+	iis2dlpc_device_id_get ( &iis2dlpc_ctx , &whoami ) ;
+	if ( whoami == IIS2DLPC_ID )
+		HAL_UART_Transmit ( &DBG , &whoami , 1 , 1000 ) ;
+	HAL_Delay ( 1000 ) ;
+	/*Restore default configuration */
+	iis2dlpc_reset_set ( &iis2dlpc_ctx , PROPERTY_ENABLE ) ;
+	do {
+		iis2dlpc_reset_get ( &iis2dlpc_ctx, &rst ) ;
+	} while ( rst ) ;
+	/* Enable Block Data Update */
+	iis2dlpc_block_data_update_set ( &iis2dlpc_ctx , PROPERTY_ENABLE ) ;
+	/*Set full scale */
+	iis2dlpc_full_scale_set ( &iis2dlpc_ctx , IIS2DLPC_8g ) ;
+
+	/* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
   }
@@ -284,10 +294,12 @@ static void MX_GPIO_Init(void)
  */
 static int32_t platform_write ( void *handle , uint8_t reg , const uint8_t *bufp , uint16_t len )
 {
-	HAL_GPIO_WritePin	( IIS2DLPC_CS_GPIO_Port , IIS2DLPC_CS_Pin , GPIO_PIN_RESET );
-	HAL_SPI_Transmit	( handle , &reg , 1 , 1000 );
-	HAL_SPI_Transmit	( handle , (uint8_t*) bufp , len , 1000 );
-	HAL_GPIO_WritePin	( IIS2DLPC_CS_GPIO_Port , IIS2DLPC_CS_Pin , GPIO_PIN_SET);
+	HAL_GPIO_WritePin	( IIS2DLPC_CS_GPIO_Port , IIS2DLPC_CS_Pin , GPIO_PIN_RESET ) ;
+	HAL_Delay ( 20 ) ;
+	HAL_SPI_Transmit	( handle , &reg , 1 , 1000 ) ;
+	HAL_SPI_Transmit	( handle , (uint8_t*) bufp , len , 1000 ) ;
+	HAL_GPIO_WritePin	( IIS2DLPC_CS_GPIO_Port , IIS2DLPC_CS_Pin , GPIO_PIN_SET) ;
+
 	return 0;
 }
 
@@ -304,10 +316,12 @@ static int32_t platform_write ( void *handle , uint8_t reg , const uint8_t *bufp
 static int32_t platform_read ( void *handle , uint8_t reg , uint8_t *bufp , uint16_t len )
 {
 	reg |= 0x80;
-	HAL_GPIO_WritePin ( IIS2DLPC_CS_GPIO_Port , IIS2DLPC_CS_Pin , GPIO_PIN_RESET);
-	HAL_SPI_Transmit ( handle , &reg , 1 , 1000 );
-	HAL_SPI_Receive ( handle , bufp , len , 1000 );
-	HAL_GPIO_WritePin ( IIS2DLPC_CS_GPIO_Port , IIS2DLPC_CS_Pin , GPIO_PIN_SET);
+	HAL_GPIO_WritePin ( IIS2DLPC_CS_GPIO_Port , IIS2DLPC_CS_Pin , GPIO_PIN_RESET) ;
+	HAL_Delay ( 20 ) ;
+	HAL_SPI_Transmit ( handle , &reg , 1 , 1000 ) ;
+	HAL_SPI_Receive ( handle , bufp , len , 1000 ) ;
+	HAL_GPIO_WritePin ( IIS2DLPC_CS_GPIO_Port , IIS2DLPC_CS_Pin , GPIO_PIN_SET) ;
+
 	return 0;
 }
 /* USER CODE END 4 */
