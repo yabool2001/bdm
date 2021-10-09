@@ -1,5 +1,9 @@
 /* USER CODE BEGIN Header */
 /**
+ *  BMD device ICCID: 134973
+ *  Wake-up implementation
+ *  https://github.com/STMicroelectronics/STMems_Standard_C_drivers/blob/master/iis2dlpc_STdC/examples/iis2dlpc_wake_up.c
+ *
   ******************************************************************************
   * @file           : main.c
   * @brief          : Main program body
@@ -22,6 +26,8 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include <stdio.h>
+#include <string.h>
 #include "iis2dlpc_reg.h"
 /* USER CODE END Includes */
 
@@ -48,6 +54,7 @@ UART_HandleTypeDef huart5;
 
 /* USER CODE BEGIN PV */
 static uint8_t whoami = 0, rst = 0 ;
+static uint8_t dbg_tx_buff[300] ;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -56,8 +63,11 @@ static void MX_GPIO_Init(void);
 static void MX_SPI1_Init(void);
 static void MX_USART5_UART_Init(void);
 /* USER CODE BEGIN PFP */
-static int32_t platform_write	( void *handle , uint8_t reg , const uint8_t *bufp , uint16_t len );
-static int32_t platform_read	( void *handle , uint8_t reg , uint8_t *bufp , uint16_t len );
+
+static int32_t platform_write	( void *handle , uint8_t reg , const uint8_t *bufp , uint16_t len ) ;
+static int32_t platform_read	( void *handle , uint8_t reg , uint8_t *bufp , uint16_t len ) ;
+static void dbg_tx ( uint8_t* tx_buff , uint16_t len );
+
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -97,34 +107,81 @@ int main(void)
   MX_USART5_UART_Init();
   /* USER CODE BEGIN 2 */
 	stmdev_ctx_t iis2dlpc_ctx;
+	iis2dlpc_reg_t iis2dlpc_int_route;
 	iis2dlpc_ctx.write_reg = platform_write;
 	iis2dlpc_ctx.read_reg = platform_read;
 	iis2dlpc_ctx.handle = &IIS2DLPC_BUS;
 
-  /* USER CODE END 2 */
-
-  /* Infinite loop */
-  /* USER CODE BEGIN WHILE */
-  while (1)
-  {
 	iis2dlpc_device_id_get ( &iis2dlpc_ctx , &whoami ) ;
 	if ( whoami == IIS2DLPC_ID )
-		HAL_UART_Transmit ( &DBG , &whoami , 1 , 1000 ) ;
-	HAL_Delay ( 1000 ) ;
+	{
+		sprintf ( (char*)dbg_tx_buff , "Hello! My name is %d\n", whoami ) ;
+		dbg_tx ( dbg_tx_buff, strlen ( (char const*)dbg_tx_buff) ) ;
+	}
+	else
+	{
+		/* manage here device not found */
+	}
 	/*Restore default configuration */
 	iis2dlpc_reset_set ( &iis2dlpc_ctx , PROPERTY_ENABLE ) ;
 	do {
 		iis2dlpc_reset_get ( &iis2dlpc_ctx, &rst ) ;
 	} while ( rst ) ;
-	/* Enable Block Data Update */
-	iis2dlpc_block_data_update_set ( &iis2dlpc_ctx , PROPERTY_ENABLE ) ;
 	/*Set full scale */
-	iis2dlpc_full_scale_set ( &iis2dlpc_ctx , IIS2DLPC_8g ) ;
+	iis2dlpc_full_scale_set ( &iis2dlpc_ctx , IIS2DLPC_2g ) ;
+	/*Configure power mode */
+	iis2dlpc_power_mode_set ( &iis2dlpc_ctx , IIS2DLPC_CONT_LOW_PWR_LOW_NOISE_12bit ) ;
+	/*Set Output Data Rate */
+	iis2dlpc_data_rate_set ( &iis2dlpc_ctx , IIS2DLPC_XL_ODR_200Hz );
+	/*Apply high-pass digital filter on Wake-Up function */
+	iis2dlpc_filter_path_set ( &iis2dlpc_ctx , IIS2DLPC_HIGH_PASS_ON_OUT ) ;
+	/*Apply high-pass digital filter on Wake-Up function
+	 * Duration time is set to zero so Wake-Up interrupt signal
+	 * is generated for each X,Y,Z filtered data exceeding the
+	 * configured threshold
+	*/
+	iis2dlpc_wkup_dur_set ( &iis2dlpc_ctx , 20 ) ;
+	/* Set wake-up threshold
+	 * Set Wake-Up threshold: 1 LSb corresponds to FS_XL/2^6
+	 */
+	iis2dlpc_wkup_threshold_set ( &iis2dlpc_ctx , 2 ) ;
+	/*Enable interrupt generation on Wake-Up INT1 pin */
+	iis2dlpc_pin_int1_route_get ( &iis2dlpc_ctx , &iis2dlpc_int_route.ctrl4_int1_pad_ctrl ) ;
+	iis2dlpc_int_route.ctrl4_int1_pad_ctrl.int1_wu = PROPERTY_ENABLE ;
+	iis2dlpc_pin_int1_route_set ( &iis2dlpc_ctx , &iis2dlpc_int_route.ctrl4_int1_pad_ctrl ) ;
 
-	/* USER CODE END WHILE */
+  /* USER CODE END 2 */
+
+  /* Infinite loop */
+  /* USER CODE BEGIN WHILE */
+	while (1)
+	{
+		iis2dlpc_all_sources_t all_source;
+		/* Check Wake-Up events */
+		iis2dlpc_all_sources_get ( &iis2dlpc_ctx , &all_source ) ;
+
+		if ( all_source.wake_up_src.wu_ia )
+		{
+			sprintf ( (char *)dbg_tx_buff , "Wake-Up event on " ) ;
+			if ( all_source.wake_up_src.x_wu )
+				strcat ( (char*)dbg_tx_buff , "X" ) ;
+			if ( all_source.wake_up_src.y_wu )
+				strcat ( (char *)dbg_tx_buff, "Y" ) ;
+			if ( all_source.wake_up_src.z_wu )
+				strcat ( (char*)dbg_tx_buff , "Z" ) ;
+			strcat ( (char *)dbg_tx_buff , " direction\r\n" ) ;
+		    dbg_tx ( dbg_tx_buff , strlen ( (char const*)dbg_tx_buff ) ) ;
+		}
+		/*
+		sprintf ( (char*)dbg_tx_buff , "I'm working...\n") ;
+		dbg_tx ( dbg_tx_buff, strlen ( (char const*)dbg_tx_buff) ) ;
+		HAL_Delay ( 5000 ) ;
+		*/
+
+    /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-  }
+	}
   /* USER CODE END 3 */
 }
 
@@ -279,6 +336,10 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(IIS2DLPC_INT1_GPIO_Port, &GPIO_InitStruct);
 
+  /* EXTI interrupt init*/
+  HAL_NVIC_SetPriority(EXTI4_15_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI4_15_IRQn);
+
 }
 
 /* USER CODE BEGIN 4 */
@@ -324,6 +385,23 @@ static int32_t platform_read ( void *handle , uint8_t reg , uint8_t *bufp , uint
 
 	return 0;
 }
+
+/*
+ * @brief  Write generic device register (platform dependent)
+ *
+ * @param  tx_buffer     buffer to transmit
+ * @param  len           number of byte to send
+ *
+ */
+static void dbg_tx ( uint8_t* tx_buff , uint16_t len ) {
+	HAL_UART_Transmit ( &DBG , tx_buff , len , 1000 ); }
+
+void HAL_GPIO_EXTI_Callback ( uint16_t GPIO_Pin )
+{
+	sprintf ( (char*)dbg_tx_buff , "INT1 happened!\n" ) ;
+	dbg_tx ( dbg_tx_buff, strlen ( (char const*)dbg_tx_buff) ) ;
+}
+
 /* USER CODE END 4 */
 
 /**
