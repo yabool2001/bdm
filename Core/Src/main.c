@@ -53,7 +53,8 @@ SPI_HandleTypeDef hspi1;
 UART_HandleTypeDef huart5;
 
 /* USER CODE BEGIN PV */
-static uint8_t whoami = 0, rst = 0 ;
+static uint8_t iis2dlpc_whoami = 0, rst = 0 ;
+static int16_t iis2dlpc_temp = 0 ;
 static uint8_t dbg_tx_buff[300] ;
 /* USER CODE END PV */
 
@@ -112,10 +113,10 @@ int main(void)
 	iis2dlpc_ctx.read_reg = platform_read;
 	iis2dlpc_ctx.handle = &IIS2DLPC_BUS;
 
-	iis2dlpc_device_id_get ( &iis2dlpc_ctx , &whoami ) ;
-	if ( whoami == IIS2DLPC_ID )
+	iis2dlpc_device_id_get ( &iis2dlpc_ctx , &iis2dlpc_whoami ) ;
+	if ( iis2dlpc_whoami == IIS2DLPC_ID )
 	{
-		sprintf ( (char*)dbg_tx_buff , "Hello! My name is %d\n", whoami ) ;
+		sprintf ( (char*)dbg_tx_buff , "Hello! My name is %d\n", iis2dlpc_whoami ) ;
 		dbg_tx ( dbg_tx_buff, strlen ( (char const*)dbg_tx_buff) ) ;
 	}
 	else
@@ -172,6 +173,11 @@ int main(void)
 			strcat ( (char *)dbg_tx_buff , " direction\r\n" ) ;
 		    dbg_tx ( dbg_tx_buff , strlen ( (char const*)dbg_tx_buff ) ) ;
 		}
+		/* get IIS2DLPC raw temp */
+		iis2dlpc_temperature_raw_get ( &iis2dlpc_ctx , &iis2dlpc_temp ) ;
+		sprintf ( (char *)dbg_tx_buff , "IIS2DLPC temp is %d " , iis2dlpc_temp ) ;
+		dbg_tx ( dbg_tx_buff , strlen ( (char const*)dbg_tx_buff ) ) ;
+		HAL_Delay ( 1000 ) ;
 		/*
 		sprintf ( (char*)dbg_tx_buff , "I'm working...\n") ;
 		dbg_tx ( dbg_tx_buff, strlen ( (char const*)dbg_tx_buff) ) ;
