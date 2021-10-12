@@ -53,8 +53,8 @@ SPI_HandleTypeDef hspi1;
 UART_HandleTypeDef huart5;
 
 /* USER CODE BEGIN PV */
-static uint8_t iis2dlpc_whoami = 0, rst = 0 ;
-static int16_t iis2dlpc_temp = 0 ;
+static uint8_t iis2dlpc_whoami_reg = 0, rst = 0 , reg8bit = 0 ;
+static int16_t iis2dlpc_temp_reg = 0 ;
 static uint8_t dbg_tx_buff[300] ;
 /* USER CODE END PV */
 
@@ -113,10 +113,10 @@ int main(void)
 	iis2dlpc_ctx.read_reg = platform_read;
 	iis2dlpc_ctx.handle = &IIS2DLPC_BUS;
 
-	iis2dlpc_device_id_get ( &iis2dlpc_ctx , &iis2dlpc_whoami ) ;
-	if ( iis2dlpc_whoami == IIS2DLPC_ID )
+	iis2dlpc_device_id_get ( &iis2dlpc_ctx , &iis2dlpc_whoami_reg ) ;
+	if ( iis2dlpc_whoami_reg == IIS2DLPC_ID )
 	{
-		sprintf ( (char*)dbg_tx_buff , "Hello! My name is %d\n", iis2dlpc_whoami ) ;
+		sprintf ( (char*)dbg_tx_buff , "Hello! My name is %d\n", iis2dlpc_whoami_reg ) ;
 		dbg_tx ( dbg_tx_buff, strlen ( (char const*)dbg_tx_buff) ) ;
 	}
 	else
@@ -141,15 +141,30 @@ int main(void)
 	 * is generated for each X,Y,Z filtered data exceeding the
 	 * configured threshold
 	*/
-	iis2dlpc_wkup_dur_set ( &iis2dlpc_ctx , 20 ) ;
+	// default iis2dlpc_wkup_dur_set(&dev_ctx, 0);
+	// range is 0-3
+	iis2dlpc_wkup_dur_set ( &iis2dlpc_ctx , 3 ) ;
+
 	/* Set wake-up threshold
 	 * Set Wake-Up threshold: 1 LSb corresponds to FS_XL/2^6
 	 */
-	iis2dlpc_wkup_threshold_set ( &iis2dlpc_ctx , 2 ) ;
+	// default iis2dlpc_wkup_threshold_set ( &iis2dlpc_ctx , 2 ) ;
+	// range is 0-63
+	iis2dlpc_wkup_threshold_set ( &iis2dlpc_ctx , 10 ) ;
 	/*Enable interrupt generation on Wake-Up INT1 pin */
 	iis2dlpc_pin_int1_route_get ( &iis2dlpc_ctx , &iis2dlpc_int_route.ctrl4_int1_pad_ctrl ) ;
 	iis2dlpc_int_route.ctrl4_int1_pad_ctrl.int1_wu = PROPERTY_ENABLE ;
 	iis2dlpc_pin_int1_route_set ( &iis2dlpc_ctx , &iis2dlpc_int_route.ctrl4_int1_pad_ctrl ) ;
+
+	/* get IIS2DLPC raw temp */
+	iis2dlpc_temperature_raw_get ( &iis2dlpc_ctx , &iis2dlpc_temp_reg ) ;
+	sprintf ( (char *)dbg_tx_buff , "IIS2DLPC temp is %d\r\n" , iis2dlpc_temp_reg ) ;
+	dbg_tx ( dbg_tx_buff , strlen ( (char const*)dbg_tx_buff ) ) ;
+
+	/* get register */
+	iis2dlpc_wkup_threshold_get ( &iis2dlpc_ctx , &reg8bit ) ;
+	sprintf ( (char *)dbg_tx_buff , "WAKE_UP_THS register decimal value is: %d\r\n" , reg8bit ) ;
+	dbg_tx ( dbg_tx_buff , strlen ( (char const*)dbg_tx_buff ) ) ;
 
   /* USER CODE END 2 */
 
@@ -173,11 +188,6 @@ int main(void)
 			strcat ( (char *)dbg_tx_buff , " direction\r\n" ) ;
 		    dbg_tx ( dbg_tx_buff , strlen ( (char const*)dbg_tx_buff ) ) ;
 		}
-		/* get IIS2DLPC raw temp */
-		iis2dlpc_temperature_raw_get ( &iis2dlpc_ctx , &iis2dlpc_temp ) ;
-		sprintf ( (char *)dbg_tx_buff , "IIS2DLPC temp is %d " , iis2dlpc_temp ) ;
-		dbg_tx ( dbg_tx_buff , strlen ( (char const*)dbg_tx_buff ) ) ;
-		HAL_Delay ( 1000 ) ;
 		/*
 		sprintf ( (char*)dbg_tx_buff , "I'm working...\n") ;
 		dbg_tx ( dbg_tx_buff, strlen ( (char const*)dbg_tx_buff) ) ;
