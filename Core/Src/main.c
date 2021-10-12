@@ -38,8 +38,14 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+
 #define IIS2DLPC_BUS hspi1
+#define IIS2DLPC_WAKEUP_THS 4
+#define IIS2DLPC_WAKEUP_DUR 3
+#define IIS2DLPC_LIR 1
+
 #define DBG huart5
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -143,14 +149,14 @@ int main(void)
 	*/
 	// default iis2dlpc_wkup_dur_set(&dev_ctx, 0);
 	// range is 0-3
-	iis2dlpc_wkup_dur_set ( &iis2dlpc_ctx , 3 ) ;
+	iis2dlpc_wkup_dur_set ( &iis2dlpc_ctx , IIS2DLPC_WAKEUP_DUR ) ;
 
 	/* Set wake-up threshold
 	 * Set Wake-Up threshold: 1 LSb corresponds to FS_XL/2^6
 	 */
 	// default iis2dlpc_wkup_threshold_set ( &iis2dlpc_ctx , 2 ) ;
 	// range is 0-63
-	iis2dlpc_wkup_threshold_set ( &iis2dlpc_ctx , 10 ) ;
+	iis2dlpc_wkup_threshold_set ( &iis2dlpc_ctx , IIS2DLPC_WAKEUP_THS ) ;
 	/*Enable interrupt generation on Wake-Up INT1 pin */
 	iis2dlpc_pin_int1_route_get ( &iis2dlpc_ctx , &iis2dlpc_int_route.ctrl4_int1_pad_ctrl ) ;
 	iis2dlpc_int_route.ctrl4_int1_pad_ctrl.int1_wu = PROPERTY_ENABLE ;
@@ -161,9 +167,15 @@ int main(void)
 	sprintf ( (char *)dbg_tx_buff , "IIS2DLPC temp is %d\r\n" , iis2dlpc_temp_reg ) ;
 	dbg_tx ( dbg_tx_buff , strlen ( (char const*)dbg_tx_buff ) ) ;
 
-	/* get register */
+	/* get register 1 */
 	iis2dlpc_wkup_threshold_get ( &iis2dlpc_ctx , &reg8bit ) ;
 	sprintf ( (char *)dbg_tx_buff , "WAKE_UP_THS register decimal value is: %d\r\n" , reg8bit ) ;
+	dbg_tx ( dbg_tx_buff , strlen ( (char const*)dbg_tx_buff ) ) ;
+
+	iis2dlpc_int_notification_set ( &iis2dlpc_ctx , IIS2DLPC_LIR ) ;
+	/* get register 2 */
+	iis2dlpc_int_notification_get ( &iis2dlpc_ctx , &reg8bit ) ;
+	sprintf ( (char *)dbg_tx_buff , "LIR value is: %d\r\n" , reg8bit ) ;
 	dbg_tx ( dbg_tx_buff , strlen ( (char const*)dbg_tx_buff ) ) ;
 
   /* USER CODE END 2 */
