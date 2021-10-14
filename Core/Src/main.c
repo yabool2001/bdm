@@ -40,8 +40,8 @@
 /* USER CODE BEGIN PD */
 
 #define IIS2DLPC_BUS hspi1
-#define IIS2DLPC_WAKEUP_THS 4
-#define IIS2DLPC_WAKEUP_DUR 3
+#define IIS2DLPC_WAKEUP_THS 1
+#define IIS2DLPC_WAKEUP_DUR 1
 #define IIS2DLPC_LIR 1
 
 #define DBG huart5
@@ -62,6 +62,9 @@ UART_HandleTypeDef huart5;
 static uint8_t iis2dlpc_whoami_reg = 0, rst = 0 , reg8bit = 0 ;
 static int16_t iis2dlpc_temp_reg = 0 ;
 static uint8_t dbg_tx_buff[300] ;
+static stmdev_ctx_t iis2dlpc_ctx;
+static iis2dlpc_reg_t iis2dlpc_int_route;
+static iis2dlpc_all_sources_t all_source;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -71,9 +74,11 @@ static void MX_SPI1_Init(void);
 static void MX_USART5_UART_Init(void);
 /* USER CODE BEGIN PFP */
 
-static int32_t platform_write	( void *handle , uint8_t reg , const uint8_t *bufp , uint16_t len ) ;
-static int32_t platform_read	( void *handle , uint8_t reg , uint8_t *bufp , uint16_t len ) ;
-static void dbg_tx ( uint8_t* tx_buff , uint16_t len );
+static int32_t	platform_write			( void *handle , uint8_t reg , const uint8_t *bufp , uint16_t len ) ;
+static int32_t	platform_read			( void *handle , uint8_t reg , uint8_t *bufp , uint16_t len ) ;
+static void		dbg_tx					( uint8_t* tx_buff , uint16_t len ) ;
+static void		iis2dlpc_int1_print		( void ) ;
+static void		iis2dlpc_conf_print		( stmdev_ctx_t* ) ;
 
 /* USER CODE END PFP */
 
@@ -113,8 +118,6 @@ int main(void)
   MX_SPI1_Init();
   MX_USART5_UART_Init();
   /* USER CODE BEGIN 2 */
-	stmdev_ctx_t iis2dlpc_ctx;
-	iis2dlpc_reg_t iis2dlpc_int_route;
 	iis2dlpc_ctx.write_reg = platform_write;
 	iis2dlpc_ctx.read_reg = platform_read;
 	iis2dlpc_ctx.handle = &IIS2DLPC_BUS;
@@ -167,16 +170,9 @@ int main(void)
 	sprintf ( (char *)dbg_tx_buff , "IIS2DLPC temp is %d\r\n" , iis2dlpc_temp_reg ) ;
 	dbg_tx ( dbg_tx_buff , strlen ( (char const*)dbg_tx_buff ) ) ;
 
-	/* get register 1 */
-	iis2dlpc_wkup_threshold_get ( &iis2dlpc_ctx , &reg8bit ) ;
-	sprintf ( (char *)dbg_tx_buff , "WAKE_UP_THS register decimal value is: %d\r\n" , reg8bit ) ;
-	dbg_tx ( dbg_tx_buff , strlen ( (char const*)dbg_tx_buff ) ) ;
-
 	iis2dlpc_int_notification_set ( &iis2dlpc_ctx , IIS2DLPC_LIR ) ;
-	/* get register 2 */
-	iis2dlpc_int_notification_get ( &iis2dlpc_ctx , &reg8bit ) ;
-	sprintf ( (char *)dbg_tx_buff , "LIR value is: %d\r\n" , reg8bit ) ;
-	dbg_tx ( dbg_tx_buff , strlen ( (char const*)dbg_tx_buff ) ) ;
+
+	iis2dlpc_conf_print ( &iis2dlpc_ctx );
 
   /* USER CODE END 2 */
 
@@ -184,7 +180,8 @@ int main(void)
   /* USER CODE BEGIN WHILE */
 	while (1)
 	{
-		iis2dlpc_all_sources_t all_source;
+		//iis2dlpc_all_sources_t all_source;
+
 		/* Check Wake-Up events */
 		iis2dlpc_all_sources_get ( &iis2dlpc_ctx , &all_source ) ;
 
@@ -200,11 +197,6 @@ int main(void)
 			strcat ( (char *)dbg_tx_buff , " direction\r\n" ) ;
 		    dbg_tx ( dbg_tx_buff , strlen ( (char const*)dbg_tx_buff ) ) ;
 		}
-		/*
-		sprintf ( (char*)dbg_tx_buff , "I'm working...\n") ;
-		dbg_tx ( dbg_tx_buff, strlen ( (char const*)dbg_tx_buff) ) ;
-		HAL_Delay ( 5000 ) ;
-		*/
 
     /* USER CODE END WHILE */
 
@@ -414,6 +406,47 @@ static int32_t platform_read ( void *handle , uint8_t reg , uint8_t *bufp , uint
 	return 0;
 }
 
+static void iis2dlpc_int1_print (void)
+{
+	HAL_GPIO_ReadPin ( IIS2DLPC_INT1_GPIO_Port , IIS2DLPC_INT1_Pin ) ;
+	sprintf ( (char *)dbg_tx_buff , "IIS2DLPC_INT1_Pin is: %d\r\n" , (uint8_t)HAL_GPIO_ReadPin ( IIS2DLPC_INT1_GPIO_Port , IIS2DLPC_INT1_Pin ) ) ;
+	dbg_tx ( dbg_tx_buff , strlen ( (char const*)dbg_tx_buff ) ) ;
+}
+
+static void	iis2dlpc_conf_print	( stmdev_ctx_t* iis2dlpc_ctx )
+{
+	iis2dlpc_wkup_threshold_get ( iis2dlpc_ctx , &reg8bit ) ;
+	sprintf ( (char *)dbg_tx_buff , "WAKE_UP_THS: %d\r\n" , reg8bit ) ;
+	dbg_tx ( dbg_tx_buff , strlen ( (char const*)dbg_tx_buff ) ) ;
+
+	iis2dlpc_read_reg ( iis2dlpc_ctx , IIS2DLPC_CTRL1 , &reg8bit , 1 ) ;
+	sprintf ( (char *)dbg_tx_buff , "CTRL1: %d\r\n" , reg8bit ) ;
+	dbg_tx ( dbg_tx_buff , strlen ( (char const*)dbg_tx_buff ) ) ;
+
+	iis2dlpc_read_reg ( iis2dlpc_ctx , IIS2DLPC_CTRL3 , &reg8bit , 1 ) ;
+	sprintf ( (char *)dbg_tx_buff , "CTRL3: %d\r\n" , reg8bit ) ;
+	dbg_tx ( dbg_tx_buff , strlen ( (char const*)dbg_tx_buff ) ) ;
+
+	iis2dlpc_read_reg ( iis2dlpc_ctx , IIS2DLPC_CTRL4_INT1_PAD_CTRL , &reg8bit , 1 ) ;
+	sprintf ( (char *)dbg_tx_buff , "CTRL4: %d\r\n" , reg8bit ) ;
+	dbg_tx ( dbg_tx_buff , strlen ( (char const*)dbg_tx_buff ) ) ;
+
+	iis2dlpc_read_reg ( iis2dlpc_ctx , IIS2DLPC_CTRL5_INT2_PAD_CTRL , &reg8bit , 1 ) ;
+	sprintf ( (char *)dbg_tx_buff , "CTRL5: %d\r\n" , reg8bit ) ;
+	dbg_tx ( dbg_tx_buff , strlen ( (char const*)dbg_tx_buff ) ) ;
+
+	iis2dlpc_read_reg ( iis2dlpc_ctx , IIS2DLPC_CTRL6 , &reg8bit , 1 ) ;
+	sprintf ( (char *)dbg_tx_buff , "CTRL6: %d\r\n" , reg8bit ) ;
+	dbg_tx ( dbg_tx_buff , strlen ( (char const*)dbg_tx_buff ) ) ;
+
+	iis2dlpc_read_reg ( iis2dlpc_ctx , IIS2DLPC_STATUS , &reg8bit , 1 ) ;
+	sprintf ( (char *)dbg_tx_buff , "STATUS: %d\r\n" , reg8bit ) ;
+	dbg_tx ( dbg_tx_buff , strlen ( (char const*)dbg_tx_buff ) ) ;
+
+	iis2dlpc_read_reg ( iis2dlpc_ctx , IIS2DLPC_WAKE_UP_SRC , &reg8bit , 1 ) ;
+	sprintf ( (char *)dbg_tx_buff , "WAKE_UP_SRC: %d\r\n" , reg8bit ) ;
+	dbg_tx ( dbg_tx_buff , strlen ( (char const*)dbg_tx_buff ) ) ;
+}
 /*
  * @brief  Write generic device register (platform dependent)
  *
@@ -428,6 +461,12 @@ void HAL_GPIO_EXTI_Callback ( uint16_t GPIO_Pin )
 {
 	sprintf ( (char*)dbg_tx_buff , "INT1 happened!\n" ) ;
 	dbg_tx ( dbg_tx_buff, strlen ( (char const*)dbg_tx_buff) ) ;
+
+	iis2dlpc_int1_print();
+	//iis2dlpc_all_sources_get ( &iis2dlpc_ctx , &all_source ) ;
+	//iis2dlpc_read_reg ( &iis2dlpc_ctx , IIS2DLPC_WAKE_UP_SRC , &reg8bit , 1 ) ;
+	//iis2dlpc_int1_print();
+
 }
 
 /* USER CODE END 4 */
