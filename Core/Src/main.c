@@ -78,7 +78,8 @@ static int32_t	platform_write			( void *handle , uint8_t reg , const uint8_t *bu
 static int32_t	platform_read			( void *handle , uint8_t reg , uint8_t *bufp , uint16_t len ) ;
 static void		dbg_tx					( uint8_t* tx_buff , uint16_t len ) ;
 static void		iis2dlpc_int1_print		( void ) ;
-static void		iis2dlpc_conf_print		( stmdev_ctx_t* ) ;
+static void		iis2dlpc_conf_set		( void ) ;
+static void		iis2dlpc_conf_print		( void ) ;
 
 /* USER CODE END PFP */
 
@@ -122,48 +123,7 @@ int main(void)
 	iis2dlpc_ctx.read_reg = platform_read;
 	iis2dlpc_ctx.handle = &IIS2DLPC_BUS;
 
-	iis2dlpc_device_id_get ( &iis2dlpc_ctx , &iis2dlpc_whoami_reg ) ;
-	if ( iis2dlpc_whoami_reg == IIS2DLPC_ID )
-	{
-		sprintf ( (char*)dbg_tx_buff , "Hello! My name is %d\n", iis2dlpc_whoami_reg ) ;
-		dbg_tx ( dbg_tx_buff, strlen ( (char const*)dbg_tx_buff) ) ;
-	}
-	else
-	{
-		/* manage here device not found */
-	}
-	/*Restore default configuration */
-	iis2dlpc_reset_set ( &iis2dlpc_ctx , PROPERTY_ENABLE ) ;
-	do {
-		iis2dlpc_reset_get ( &iis2dlpc_ctx, &rst ) ;
-	} while ( rst ) ;
-	/*Set full scale */
-	iis2dlpc_full_scale_set ( &iis2dlpc_ctx , IIS2DLPC_2g ) ;
-	/*Configure power mode */
-	iis2dlpc_power_mode_set ( &iis2dlpc_ctx , IIS2DLPC_CONT_LOW_PWR_LOW_NOISE_12bit ) ;
-	/*Set Output Data Rate */
-	iis2dlpc_data_rate_set ( &iis2dlpc_ctx , IIS2DLPC_XL_ODR_200Hz );
-	/*Apply high-pass digital filter on Wake-Up function */
-	iis2dlpc_filter_path_set ( &iis2dlpc_ctx , IIS2DLPC_HIGH_PASS_ON_OUT ) ;
-	/*Apply high-pass digital filter on Wake-Up function
-	 * Duration time is set to zero so Wake-Up interrupt signal
-	 * is generated for each X,Y,Z filtered data exceeding the
-	 * configured threshold
-	*/
-	// default iis2dlpc_wkup_dur_set(&dev_ctx, 0);
-	// range is 0-3
-	iis2dlpc_wkup_dur_set ( &iis2dlpc_ctx , IIS2DLPC_WAKEUP_DUR ) ;
-
-	/* Set wake-up threshold
-	 * Set Wake-Up threshold: 1 LSb corresponds to FS_XL/2^6
-	 */
-	// default iis2dlpc_wkup_threshold_set ( &iis2dlpc_ctx , 2 ) ;
-	// range is 0-63
-	iis2dlpc_wkup_threshold_set ( &iis2dlpc_ctx , IIS2DLPC_WAKEUP_THS ) ;
-	/*Enable interrupt generation on Wake-Up INT1 pin */
-	iis2dlpc_pin_int1_route_get ( &iis2dlpc_ctx , &iis2dlpc_int_route.ctrl4_int1_pad_ctrl ) ;
-	iis2dlpc_int_route.ctrl4_int1_pad_ctrl.int1_wu = PROPERTY_ENABLE ;
-	iis2dlpc_pin_int1_route_set ( &iis2dlpc_ctx , &iis2dlpc_int_route.ctrl4_int1_pad_ctrl ) ;
+	iis2dlpc_conf_set ();
 
 	/* get IIS2DLPC raw temp */
 	iis2dlpc_temperature_raw_get ( &iis2dlpc_ctx , &iis2dlpc_temp_reg ) ;
@@ -172,7 +132,7 @@ int main(void)
 
 	iis2dlpc_int_notification_set ( &iis2dlpc_ctx , IIS2DLPC_LIR ) ;
 
-	iis2dlpc_conf_print ( &iis2dlpc_ctx );
+	iis2dlpc_conf_print ();
 
   /* USER CODE END 2 */
 
@@ -413,37 +373,83 @@ static void iis2dlpc_int1_print (void)
 	dbg_tx ( dbg_tx_buff , strlen ( (char const*)dbg_tx_buff ) ) ;
 }
 
-static void	iis2dlpc_conf_print	( stmdev_ctx_t* iis2dlpc_ctx )
+static void	iis2dlpc_conf_set ( void )
 {
-	iis2dlpc_wkup_threshold_get ( iis2dlpc_ctx , &reg8bit ) ;
+	iis2dlpc_device_id_get ( &iis2dlpc_ctx , &iis2dlpc_whoami_reg ) ;
+	if ( iis2dlpc_whoami_reg == IIS2DLPC_ID )
+	{
+		sprintf ( (char*)dbg_tx_buff , "Hello! My name is %d\n", iis2dlpc_whoami_reg ) ;
+		dbg_tx ( dbg_tx_buff, strlen ( (char const*)dbg_tx_buff) ) ;
+	}
+	else
+	{
+		/* manage here device not found */
+	}
+	/*Restore default configuration */
+	iis2dlpc_reset_set ( &iis2dlpc_ctx , PROPERTY_ENABLE ) ;
+	do {
+		iis2dlpc_reset_get ( &iis2dlpc_ctx, &rst ) ;
+	} while ( rst ) ;
+	/*Set full scale */
+	iis2dlpc_full_scale_set ( &iis2dlpc_ctx , IIS2DLPC_2g ) ;
+	/*Configure power mode */
+	iis2dlpc_power_mode_set ( &iis2dlpc_ctx , IIS2DLPC_CONT_LOW_PWR_LOW_NOISE_12bit ) ;
+	/*Set Output Data Rate */
+	iis2dlpc_data_rate_set ( &iis2dlpc_ctx , IIS2DLPC_XL_ODR_200Hz );
+	/*Apply high-pass digital filter on Wake-Up function */
+	iis2dlpc_filter_path_set ( &iis2dlpc_ctx , IIS2DLPC_HIGH_PASS_ON_OUT ) ;
+	/*Apply high-pass digital filter on Wake-Up function
+	 * Duration time is set to zero so Wake-Up interrupt signal
+	 * is generated for each X,Y,Z filtered data exceeding the
+	 * configured threshold
+	*/
+	// default iis2dlpc_wkup_dur_set(&dev_ctx, 0);
+	// range is 0-3
+	iis2dlpc_wkup_dur_set ( &iis2dlpc_ctx , IIS2DLPC_WAKEUP_DUR ) ;
+
+	/* Set wake-up threshold
+	 * Set Wake-Up threshold: 1 LSb corresponds to FS_XL/2^6
+	 */
+	// default iis2dlpc_wkup_threshold_set ( &iis2dlpc_ctx , 2 ) ;
+	// range is 0-63
+	iis2dlpc_wkup_threshold_set ( &iis2dlpc_ctx , IIS2DLPC_WAKEUP_THS ) ;
+	/*Enable interrupt generation on Wake-Up INT1 pin */
+	iis2dlpc_pin_int1_route_get ( &iis2dlpc_ctx , &iis2dlpc_int_route.ctrl4_int1_pad_ctrl ) ;
+	iis2dlpc_int_route.ctrl4_int1_pad_ctrl.int1_wu = PROPERTY_ENABLE ;
+	iis2dlpc_pin_int1_route_set ( &iis2dlpc_ctx , &iis2dlpc_int_route.ctrl4_int1_pad_ctrl ) ;
+}
+
+static void	iis2dlpc_conf_print	( void )
+{
+	iis2dlpc_wkup_threshold_get ( &iis2dlpc_ctx , &reg8bit ) ;
 	sprintf ( (char *)dbg_tx_buff , "WAKE_UP_THS: %d\r\n" , reg8bit ) ;
 	dbg_tx ( dbg_tx_buff , strlen ( (char const*)dbg_tx_buff ) ) ;
 
-	iis2dlpc_read_reg ( iis2dlpc_ctx , IIS2DLPC_CTRL1 , &reg8bit , 1 ) ;
+	iis2dlpc_read_reg ( &iis2dlpc_ctx , IIS2DLPC_CTRL1 , &reg8bit , 1 ) ;
 	sprintf ( (char *)dbg_tx_buff , "CTRL1: %d\r\n" , reg8bit ) ;
 	dbg_tx ( dbg_tx_buff , strlen ( (char const*)dbg_tx_buff ) ) ;
 
-	iis2dlpc_read_reg ( iis2dlpc_ctx , IIS2DLPC_CTRL3 , &reg8bit , 1 ) ;
+	iis2dlpc_read_reg ( &iis2dlpc_ctx , IIS2DLPC_CTRL3 , &reg8bit , 1 ) ;
 	sprintf ( (char *)dbg_tx_buff , "CTRL3: %d\r\n" , reg8bit ) ;
 	dbg_tx ( dbg_tx_buff , strlen ( (char const*)dbg_tx_buff ) ) ;
 
-	iis2dlpc_read_reg ( iis2dlpc_ctx , IIS2DLPC_CTRL4_INT1_PAD_CTRL , &reg8bit , 1 ) ;
+	iis2dlpc_read_reg ( &iis2dlpc_ctx , IIS2DLPC_CTRL4_INT1_PAD_CTRL , &reg8bit , 1 ) ;
 	sprintf ( (char *)dbg_tx_buff , "CTRL4: %d\r\n" , reg8bit ) ;
 	dbg_tx ( dbg_tx_buff , strlen ( (char const*)dbg_tx_buff ) ) ;
 
-	iis2dlpc_read_reg ( iis2dlpc_ctx , IIS2DLPC_CTRL5_INT2_PAD_CTRL , &reg8bit , 1 ) ;
+	iis2dlpc_read_reg ( &iis2dlpc_ctx , IIS2DLPC_CTRL5_INT2_PAD_CTRL , &reg8bit , 1 ) ;
 	sprintf ( (char *)dbg_tx_buff , "CTRL5: %d\r\n" , reg8bit ) ;
 	dbg_tx ( dbg_tx_buff , strlen ( (char const*)dbg_tx_buff ) ) ;
 
-	iis2dlpc_read_reg ( iis2dlpc_ctx , IIS2DLPC_CTRL6 , &reg8bit , 1 ) ;
+	iis2dlpc_read_reg ( &iis2dlpc_ctx , IIS2DLPC_CTRL6 , &reg8bit , 1 ) ;
 	sprintf ( (char *)dbg_tx_buff , "CTRL6: %d\r\n" , reg8bit ) ;
 	dbg_tx ( dbg_tx_buff , strlen ( (char const*)dbg_tx_buff ) ) ;
 
-	iis2dlpc_read_reg ( iis2dlpc_ctx , IIS2DLPC_STATUS , &reg8bit , 1 ) ;
+	iis2dlpc_read_reg ( &iis2dlpc_ctx , IIS2DLPC_STATUS , &reg8bit , 1 ) ;
 	sprintf ( (char *)dbg_tx_buff , "STATUS: %d\r\n" , reg8bit ) ;
 	dbg_tx ( dbg_tx_buff , strlen ( (char const*)dbg_tx_buff ) ) ;
 
-	iis2dlpc_read_reg ( iis2dlpc_ctx , IIS2DLPC_WAKE_UP_SRC , &reg8bit , 1 ) ;
+	iis2dlpc_read_reg ( &iis2dlpc_ctx , IIS2DLPC_WAKE_UP_SRC , &reg8bit , 1 ) ;
 	sprintf ( (char *)dbg_tx_buff , "WAKE_UP_SRC: %d\r\n" , reg8bit ) ;
 	dbg_tx ( dbg_tx_buff , strlen ( (char const*)dbg_tx_buff ) ) ;
 }
