@@ -41,7 +41,7 @@
 
 #define IIS2DLPC_BUS hspi1
 #define IIS2DLPC_WAKEUP_THS 1
-#define IIS2DLPC_WAKEUP_DUR 1
+#define IIS2DLPC_WAKEUP_DUR 0
 #define IIS2DLPC_LIR 1
 
 #define DBG huart5
@@ -143,6 +143,7 @@ int main(void)
 		//iis2dlpc_all_sources_t all_source;
 
 		/* Check Wake-Up events */
+		/*
 		iis2dlpc_all_sources_get ( &iis2dlpc_ctx , &all_source ) ;
 
 		if ( all_source.wake_up_src.wu_ia )
@@ -157,7 +158,7 @@ int main(void)
 			strcat ( (char *)dbg_tx_buff , " direction\r\n" ) ;
 		    dbg_tx ( dbg_tx_buff , strlen ( (char const*)dbg_tx_buff ) ) ;
 		}
-
+		*/
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -465,14 +466,12 @@ static void dbg_tx ( uint8_t* tx_buff , uint16_t len ) {
 
 void HAL_GPIO_EXTI_Callback ( uint16_t GPIO_Pin )
 {
+	iis2dlpc_int1_print();
+	iis2dlpc_all_sources_get ( &iis2dlpc_ctx , &all_source ) ;
+	iis2dlpc_int1_print();
+
 	sprintf ( (char*)dbg_tx_buff , "INT1 happened!\n" ) ;
 	dbg_tx ( dbg_tx_buff, strlen ( (char const*)dbg_tx_buff) ) ;
-
-	iis2dlpc_int1_print();
-	//iis2dlpc_all_sources_get ( &iis2dlpc_ctx , &all_source ) ;
-	//iis2dlpc_read_reg ( &iis2dlpc_ctx , IIS2DLPC_WAKE_UP_SRC , &reg8bit , 1 ) ;
-	//iis2dlpc_int1_print();
-
 }
 
 /* USER CODE END 4 */
