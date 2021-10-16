@@ -40,8 +40,8 @@
 /* USER CODE BEGIN PD */
 
 #define IIS2DLPC_BUS hspi1
-#define IIS2DLPC_WAKEUP_THS 1
-#define IIS2DLPC_WAKEUP_DUR 0
+#define IIS2DLPC_WAKEUP_THS 16
+#define IIS2DLPC_WAKEUP_DUR 2
 #define IIS2DLPC_LIR 1
 
 #define DBG huart5
@@ -318,7 +318,7 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_Init(IIS2DLPC_INT1_GPIO_Port, &GPIO_InitStruct);
 
   /* EXTI interrupt init*/
-  HAL_NVIC_SetPriority(EXTI4_15_IRQn, 0, 0);
+  HAL_NVIC_SetPriority(EXTI4_15_IRQn, 2, 0);
   HAL_NVIC_EnableIRQ(EXTI4_15_IRQn);
 
 }
