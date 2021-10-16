@@ -370,7 +370,7 @@ static int32_t platform_read ( void *handle , uint8_t reg , uint8_t *bufp , uint
 static void iis2dlpc_int1_print (void)
 {
 	HAL_GPIO_ReadPin ( IIS2DLPC_INT1_GPIO_Port , IIS2DLPC_INT1_Pin ) ;
-	sprintf ( (char *)dbg_tx_buff , "IIS2DLPC_INT1_Pin is: %d\r\n" , (uint8_t)HAL_GPIO_ReadPin ( IIS2DLPC_INT1_GPIO_Port , IIS2DLPC_INT1_Pin ) ) ;
+	sprintf ( (char *)dbg_tx_buff , "IIS2DLPC_INT1_Pin state: %d\r\n" , (uint8_t)HAL_GPIO_ReadPin ( IIS2DLPC_INT1_GPIO_Port , IIS2DLPC_INT1_Pin ) ) ;
 	dbg_tx ( dbg_tx_buff , strlen ( (char const*)dbg_tx_buff ) ) ;
 }
 
@@ -461,8 +461,7 @@ static void	iis2dlpc_conf_print	( void )
  * @param  len           number of byte to send
  *
  */
-static void dbg_tx ( uint8_t* tx_buff , uint16_t len ) {
-	HAL_UART_Transmit ( &DBG , tx_buff , len , 1000 ); }
+static void dbg_tx ( uint8_t* tx_buff , uint16_t len ) { HAL_UART_Transmit ( &DBG , tx_buff , len , 1000 ); }
 
 void HAL_GPIO_EXTI_Callback ( uint16_t GPIO_Pin )
 {

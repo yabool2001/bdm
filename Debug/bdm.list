@@ -7,23 +7,23 @@ Idx Name          Size      VMA       LMA       File off  Algn
                   CONTENTS, ALLOC, LOAD, READONLY, DATA
   1 .text         000046c4  080000c0  080000c0  000100c0  2**2
                   CONTENTS, ALLOC, LOAD, READONLY, CODE
-  2 .rodata       00000170  08004784  08004784  00014784  2**2
+  2 .rodata       00000174  08004784  08004784  00014784  2**2
                   CONTENTS, ALLOC, LOAD, READONLY, DATA
-  3 .ARM.extab    00000000  080048f4  080048f4  00020070  2**0
+  3 .ARM.extab    00000000  080048f8  080048f8  00020070  2**0
                   CONTENTS
-  4 .ARM          00000008  080048f4  080048f4  000148f4  2**2
+  4 .ARM          00000008  080048f8  080048f8  000148f8  2**2
                   CONTENTS, ALLOC, LOAD, READONLY, DATA
-  5 .preinit_array 00000000  080048fc  080048fc  00020070  2**0
+  5 .preinit_array 00000000  08004900  08004900  00020070  2**0
                   CONTENTS, ALLOC, LOAD, DATA
-  6 .init_array   00000004  080048fc  080048fc  000148fc  2**2
+  6 .init_array   00000004  08004900  08004900  00014900  2**2
                   CONTENTS, ALLOC, LOAD, DATA
-  7 .fini_array   00000004  08004900  08004900  00014900  2**2
+  7 .fini_array   00000004  08004904  08004904  00014904  2**2
                   CONTENTS, ALLOC, LOAD, DATA
-  8 .data         00000070  20000000  08004904  00020000  2**2
+  8 .data         00000070  20000000  08004908  00020000  2**2
                   CONTENTS, ALLOC, LOAD, DATA
-  9 .bss          00000264  20000070  08004974  00020070  2**2
+  9 .bss          00000264  20000070  08004978  00020070  2**2
                   ALLOC
- 10 ._user_heap_stack 00000604  200002d4  08004974  000202d4  2**0
+ 10 ._user_heap_stack 00000604  200002d4  08004978  000202d4  2**0
                   ALLOC
  11 .ARM.attributes 00000028  00000000  00000000  00020070  2**0
                   CONTENTS, READONLY
@@ -1261,7 +1261,7 @@ static void iis2dlpc_int1_print (void)
  80008be:	0019      	movs	r1, r3
  80008c0:	0010      	movs	r0, r2
  80008c2:	f001 f929 	bl	8001b18 <HAL_GPIO_ReadPin>
-	sprintf ( (char *)dbg_tx_buff , "IIS2DLPC_INT1_Pin is: %d\r\n" , (uint8_t)HAL_GPIO_ReadPin ( IIS2DLPC_INT1_GPIO_Port , IIS2DLPC_INT1_Pin ) ) ;
+	sprintf ( (char *)dbg_tx_buff , "IIS2DLPC_INT1_Pin state: %d\r\n" , (uint8_t)HAL_GPIO_ReadPin ( IIS2DLPC_INT1_GPIO_Port , IIS2DLPC_INT1_Pin ) ) ;
  80008c6:	2380      	movs	r3, #128	; 0x80
  80008c8:	005b      	lsls	r3, r3, #1
  80008ca:	4a0d      	ldr	r2, [pc, #52]	; (8000900 <iis2dlpc_int1_print+0x4c>)
@@ -1420,7 +1420,7 @@ static void	iis2dlpc_conf_set ( void )
  80009ca:	bd80      	pop	{r7, pc}
  80009cc:	2000008c 	.word	0x2000008c
  80009d0:	200001c0 	.word	0x200001c0
- 80009d4:	080047b8 	.word	0x080047b8
+ 80009d4:	080047bc 	.word	0x080047bc
  80009d8:	20000094 	.word	0x20000094
  80009dc:	2000008d 	.word	0x2000008d
  80009e0:	200001cc 	.word	0x200001cc
@@ -1637,15 +1637,15 @@ static void	iis2dlpc_conf_print	( void )
  8000b7e:	46c0      	nop			; (mov r8, r8)
  8000b80:	2000008e 	.word	0x2000008e
  8000b84:	200001c0 	.word	0x200001c0
- 8000b88:	080047d0 	.word	0x080047d0
+ 8000b88:	080047d4 	.word	0x080047d4
  8000b8c:	20000094 	.word	0x20000094
- 8000b90:	080047e4 	.word	0x080047e4
- 8000b94:	080047f0 	.word	0x080047f0
- 8000b98:	080047fc 	.word	0x080047fc
- 8000b9c:	08004808 	.word	0x08004808
- 8000ba0:	08004814 	.word	0x08004814
- 8000ba4:	08004820 	.word	0x08004820
- 8000ba8:	08004830 	.word	0x08004830
+ 8000b90:	080047e8 	.word	0x080047e8
+ 8000b94:	080047f4 	.word	0x080047f4
+ 8000b98:	08004800 	.word	0x08004800
+ 8000b9c:	0800480c 	.word	0x0800480c
+ 8000ba0:	08004818 	.word	0x08004818
+ 8000ba4:	08004824 	.word	0x08004824
+ 8000ba8:	08004834 	.word	0x08004834
 
 08000bac <dbg_tx>:
  *
@@ -1653,7 +1653,7 @@ static void	iis2dlpc_conf_print	( void )
  * @param  len           number of byte to send
  *
  */
-static void dbg_tx ( uint8_t* tx_buff , uint16_t len ) {
+static void dbg_tx ( uint8_t* tx_buff , uint16_t len ) { HAL_UART_Transmit ( &DBG , tx_buff , len , 1000 ); }
  8000bac:	b590      	push	{r4, r7, lr}
  8000bae:	b083      	sub	sp, #12
  8000bb0:	af00      	add	r7, sp, #0
@@ -1661,7 +1661,6 @@ static void dbg_tx ( uint8_t* tx_buff , uint16_t len ) {
  8000bb4:	000a      	movs	r2, r1
  8000bb6:	1cbb      	adds	r3, r7, #2
  8000bb8:	801a      	strh	r2, [r3, #0]
-	HAL_UART_Transmit ( &DBG , tx_buff , len , 1000 ); }
  8000bba:	23fa      	movs	r3, #250	; 0xfa
  8000bbc:	009c      	lsls	r4, r3, #2
  8000bbe:	1cbb      	adds	r3, r7, #2
@@ -1723,7 +1722,7 @@ void HAL_GPIO_EXTI_Callback ( uint16_t GPIO_Pin )
  8000c22:	46c0      	nop			; (mov r8, r8)
  8000c24:	200001d0 	.word	0x200001d0
  8000c28:	200001c0 	.word	0x200001c0
- 8000c2c:	08004844 	.word	0x08004844
+ 8000c2c:	08004848 	.word	0x08004848
  8000c30:	20000094 	.word	0x20000094
 
 08000c34 <Error_Handler>:
@@ -2295,7 +2294,7 @@ LoopForever:
   ldr r1, =_edata
  8000e74:	20000070 	.word	0x20000070
   ldr r2, =_sidata
- 8000e78:	08004904 	.word	0x08004904
+ 8000e78:	08004908 	.word	0x08004908
   ldr r2, =_sbss
  8000e7c:	20000070 	.word	0x20000070
   ldr r4, =_ebss
@@ -5323,7 +5322,7 @@ HAL_StatusTypeDef HAL_RCC_OscConfig(RCC_OscInitTypeDef  *RCC_OscInitStruct)
  8001f04:	fffeffff 	.word	0xfffeffff
  8001f08:	fffbffff 	.word	0xfffbffff
  8001f0c:	ffffe0ff 	.word	0xffffe0ff
- 8001f10:	08004854 	.word	0x08004854
+ 8001f10:	08004858 	.word	0x08004858
  8001f14:	20000000 	.word	0x20000000
  8001f18:	20000004 	.word	0x20000004
  8001f1c:	ffff1fff 	.word	0xffff1fff
@@ -6605,7 +6604,7 @@ HAL_StatusTypeDef HAL_RCC_ClockConfig(RCC_ClkInitTypeDef  *RCC_ClkInitStruct, ui
  80025e4:	40021000 	.word	0x40021000
  80025e8:	fffff8ff 	.word	0xfffff8ff
  80025ec:	ffffc7ff 	.word	0xffffc7ff
- 80025f0:	08004854 	.word	0x08004854
+ 80025f0:	08004858 	.word	0x08004858
  80025f4:	20000000 	.word	0x20000000
  80025f8:	20000004 	.word	0x20000004
 
@@ -6830,7 +6829,7 @@ uint32_t HAL_RCC_GetSysClockFreq(void)
  8002738:	003d0900 	.word	0x003d0900
  800273c:	00f42400 	.word	0x00f42400
  8002740:	007a1200 	.word	0x007a1200
- 8002744:	0800486c 	.word	0x0800486c
+ 8002744:	08004870 	.word	0x08004870
 
 08002748 <HAL_RCC_GetHCLKFreq>:
   * @note   The SystemCoreClock CMSIS variable is used to store System Clock Frequency
@@ -6879,7 +6878,7 @@ uint32_t HAL_RCC_GetPCLK1Freq(void)
  800277c:	bd80      	pop	{r7, pc}
  800277e:	46c0      	nop			; (mov r8, r8)
  8002780:	40021000 	.word	0x40021000
- 8002784:	08004864 	.word	0x08004864
+ 8002784:	08004868 	.word	0x08004868
 
 08002788 <HAL_RCC_GetPCLK2Freq>:
   * @note   Each time PCLK2 changes, this function must be called to update the
@@ -6909,7 +6908,7 @@ uint32_t HAL_RCC_GetPCLK2Freq(void)
  80027a8:	bd80      	pop	{r7, pc}
  80027aa:	46c0      	nop			; (mov r8, r8)
  80027ac:	40021000 	.word	0x40021000
- 80027b0:	08004864 	.word	0x08004864
+ 80027b0:	08004868 	.word	0x08004868
 
 080027b4 <HAL_SPI_Init>:
   * @param  hspi pointer to a SPI_HandleTypeDef structure that contains
@@ -10380,11 +10379,11 @@ HAL_StatusTypeDef UART_SetConfig(UART_HandleTypeDef *huart)
  8003b22:	b00e      	add	sp, #56	; 0x38
  8003b24:	bdb0      	pop	{r4, r5, r7, pc}
  8003b26:	46c0      	nop			; (mov r8, r8)
- 8003b28:	08004878 	.word	0x08004878
+ 8003b28:	0800487c 	.word	0x0800487c
  8003b2c:	40021000 	.word	0x40021000
  8003b30:	003d0900 	.word	0x003d0900
  8003b34:	00f42400 	.word	0x00f42400
- 8003b38:	0800489c 	.word	0x0800489c
+ 8003b38:	080048a0 	.word	0x080048a0
 
 08003b3c <UART_AdvFeatureConfig>:
   * @brief Configure the UART peripheral advanced features.
@@ -11053,10 +11052,10 @@ __STATIC_FORCEINLINE void __set_PRIMASK(uint32_t priMask)
  8003efa:	4798      	blx	r3
  8003efc:	3601      	adds	r6, #1
  8003efe:	e7f2      	b.n	8003ee6 <__libc_init_array+0x1e>
- 8003f00:	080048fc 	.word	0x080048fc
- 8003f04:	080048fc 	.word	0x080048fc
- 8003f08:	080048fc 	.word	0x080048fc
- 8003f0c:	08004900 	.word	0x08004900
+ 8003f00:	08004900 	.word	0x08004900
+ 8003f04:	08004900 	.word	0x08004900
+ 8003f08:	08004900 	.word	0x08004900
+ 8003f0c:	08004904 	.word	0x08004904
 
 08003f10 <memset>:
  8003f10:	0003      	movs	r3, r0
@@ -11433,9 +11432,9 @@ __STATIC_FORCEINLINE void __set_PRIMASK(uint32_t priMask)
  8004208:	f000 f87c 	bl	8004304 <_printf_i>
  800420c:	e7ea      	b.n	80041e4 <_svfiprintf_r+0x1c0>
  800420e:	46c0      	nop			; (mov r8, r8)
- 8004210:	080048c0 	.word	0x080048c0
- 8004214:	080048c6 	.word	0x080048c6
- 8004218:	080048ca 	.word	0x080048ca
+ 8004210:	080048c4 	.word	0x080048c4
+ 8004214:	080048ca 	.word	0x080048ca
+ 8004218:	080048ce 	.word	0x080048ce
  800421c:	00000000 	.word	0x00000000
  8004220:	08003f61 	.word	0x08003f61
 
@@ -11809,8 +11808,8 @@ __STATIC_FORCEINLINE void __set_PRIMASK(uint32_t priMask)
  800451a:	2500      	movs	r5, #0
  800451c:	e7f7      	b.n	800450e <_printf_i+0x20a>
  800451e:	46c0      	nop			; (mov r8, r8)
- 8004520:	080048d1 	.word	0x080048d1
- 8004524:	080048e2 	.word	0x080048e2
+ 8004520:	080048d5 	.word	0x080048d5
+ 8004524:	080048e6 	.word	0x080048e6
 
 08004528 <memchr>:
  8004528:	b2c9      	uxtb	r1, r1
