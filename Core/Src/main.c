@@ -40,8 +40,8 @@
 /* USER CODE BEGIN PD */
 
 #define IIS2DLPC_BUS hspi1
-#define IIS2DLPC_WAKEUP_THS 16
-#define IIS2DLPC_WAKEUP_DUR 2
+#define IIS2DLPC_WAKEUP_THS 4
+#define IIS2DLPC_WAKEUP_DUR 3
 #define IIS2DLPC_LIR 1
 
 #define DBG huart5
