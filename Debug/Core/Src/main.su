@@ -10,4 +10,4 @@ main.c:377:13:iis2dlpc_conf_set	8	static
 main.c:423:13:iis2dlpc_conf_print	8	static
 main.c:464:13:dbg_tx	24	static
 main.c:467:6:HAL_GPIO_EXTI_Callback	16	static
-main.c:483:6:Error_Handler	8	static,ignoring_inline_asm
+main.c:485:6:Error_Handler	8	static,ignoring_inline_asm

@@ -1688,31 +1688,33 @@ void HAL_GPIO_EXTI_Callback ( uint16_t GPIO_Pin )
  8000be2:	801a      	strh	r2, [r3, #0]
 	iis2dlpc_int1_print();
  8000be4:	f7ff fe66 	bl	80008b4 <iis2dlpc_int1_print>
+
 	iis2dlpc_all_sources_get ( &iis2dlpc_ctx , &all_source ) ;
  8000be8:	4a0e      	ldr	r2, [pc, #56]	; (8000c24 <HAL_GPIO_EXTI_Callback+0x4c>)
  8000bea:	4b0f      	ldr	r3, [pc, #60]	; (8000c28 <HAL_GPIO_EXTI_Callback+0x50>)
  8000bec:	0011      	movs	r1, r2
  8000bee:	0018      	movs	r0, r3
  8000bf0:	f000 fa7f 	bl	80010f2 <iis2dlpc_all_sources_get>
-	iis2dlpc_int1_print();
- 8000bf4:	f7ff fe5e 	bl	80008b4 <iis2dlpc_int1_print>
 
-	sprintf ( (char*)dbg_tx_buff , "INT1 happened!\n" ) ;
- 8000bf8:	4a0c      	ldr	r2, [pc, #48]	; (8000c2c <HAL_GPIO_EXTI_Callback+0x54>)
- 8000bfa:	4b0d      	ldr	r3, [pc, #52]	; (8000c30 <HAL_GPIO_EXTI_Callback+0x58>)
- 8000bfc:	0011      	movs	r1, r2
- 8000bfe:	0018      	movs	r0, r3
- 8000c00:	f003 f98e 	bl	8003f20 <siprintf>
+	sprintf ( (char*)dbg_tx_buff , "INT1 detected!\n" ) ;
+ 8000bf4:	4a0d      	ldr	r2, [pc, #52]	; (8000c2c <HAL_GPIO_EXTI_Callback+0x54>)
+ 8000bf6:	4b0e      	ldr	r3, [pc, #56]	; (8000c30 <HAL_GPIO_EXTI_Callback+0x58>)
+ 8000bf8:	0011      	movs	r1, r2
+ 8000bfa:	0018      	movs	r0, r3
+ 8000bfc:	f003 f990 	bl	8003f20 <siprintf>
 	dbg_tx ( dbg_tx_buff, strlen ( (char const*)dbg_tx_buff) ) ;
- 8000c04:	4b0a      	ldr	r3, [pc, #40]	; (8000c30 <HAL_GPIO_EXTI_Callback+0x58>)
- 8000c06:	0018      	movs	r0, r3
- 8000c08:	f7ff fa7e 	bl	8000108 <strlen>
- 8000c0c:	0003      	movs	r3, r0
- 8000c0e:	b29a      	uxth	r2, r3
- 8000c10:	4b07      	ldr	r3, [pc, #28]	; (8000c30 <HAL_GPIO_EXTI_Callback+0x58>)
- 8000c12:	0011      	movs	r1, r2
- 8000c14:	0018      	movs	r0, r3
- 8000c16:	f7ff ffc9 	bl	8000bac <dbg_tx>
+ 8000c00:	4b0b      	ldr	r3, [pc, #44]	; (8000c30 <HAL_GPIO_EXTI_Callback+0x58>)
+ 8000c02:	0018      	movs	r0, r3
+ 8000c04:	f7ff fa80 	bl	8000108 <strlen>
+ 8000c08:	0003      	movs	r3, r0
+ 8000c0a:	b29a      	uxth	r2, r3
+ 8000c0c:	4b08      	ldr	r3, [pc, #32]	; (8000c30 <HAL_GPIO_EXTI_Callback+0x58>)
+ 8000c0e:	0011      	movs	r1, r2
+ 8000c10:	0018      	movs	r0, r3
+ 8000c12:	f7ff ffcb 	bl	8000bac <dbg_tx>
+
+	iis2dlpc_int1_print();
+ 8000c16:	f7ff fe4d 	bl	80008b4 <iis2dlpc_int1_print>
 }
  8000c1a:	46c0      	nop			; (mov r8, r8)
  8000c1c:	46bd      	mov	sp, r7

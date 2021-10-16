@@ -467,11 +467,13 @@ static void dbg_tx ( uint8_t* tx_buff , uint16_t len ) {
 void HAL_GPIO_EXTI_Callback ( uint16_t GPIO_Pin )
 {
 	iis2dlpc_int1_print();
-	iis2dlpc_all_sources_get ( &iis2dlpc_ctx , &all_source ) ;
-	iis2dlpc_int1_print();
 
-	sprintf ( (char*)dbg_tx_buff , "INT1 happened!\n" ) ;
+	iis2dlpc_all_sources_get ( &iis2dlpc_ctx , &all_source ) ;
+
+	sprintf ( (char*)dbg_tx_buff , "INT1 detected!\n" ) ;
 	dbg_tx ( dbg_tx_buff, strlen ( (char const*)dbg_tx_buff) ) ;
+
+	iis2dlpc_int1_print();
 }
 
 /* USER CODE END 4 */
