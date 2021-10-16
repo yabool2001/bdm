@@ -55,7 +55,6 @@
 
 /* Private variables ---------------------------------------------------------*/
 SPI_HandleTypeDef hspi1;
-
 UART_HandleTypeDef huart5;
 
 /* USER CODE BEGIN PV */
@@ -78,6 +77,7 @@ static int32_t	platform_write			( void *handle , uint8_t reg , const uint8_t *bu
 static int32_t	platform_read			( void *handle , uint8_t reg , uint8_t *bufp , uint16_t len ) ;
 static void		dbg_tx					( uint8_t* tx_buff , uint16_t len ) ;
 static void		iis2dlpc_int1_print		( void ) ;
+static void		iis2dlpc_temp_print		( void ) ;
 static void		iis2dlpc_conf_set		( void ) ;
 static void		iis2dlpc_conf_print		( void ) ;
 
@@ -119,20 +119,13 @@ int main(void)
   MX_SPI1_Init();
   MX_USART5_UART_Init();
   /* USER CODE BEGIN 2 */
-	iis2dlpc_ctx.write_reg = platform_write;
-	iis2dlpc_ctx.read_reg = platform_read;
-	iis2dlpc_ctx.handle = &IIS2DLPC_BUS;
+	iis2dlpc_ctx.write_reg = platform_write ;
+	iis2dlpc_ctx.read_reg = platform_read ;
+	iis2dlpc_ctx.handle = &IIS2DLPC_BUS ;
 
-	iis2dlpc_conf_set ();
-
-	/* get IIS2DLPC raw temp */
-	iis2dlpc_temperature_raw_get ( &iis2dlpc_ctx , &iis2dlpc_temp_reg ) ;
-	sprintf ( (char *)dbg_tx_buff , "IIS2DLPC temp is %d\r\n" , iis2dlpc_temp_reg ) ;
-	dbg_tx ( dbg_tx_buff , strlen ( (char const*)dbg_tx_buff ) ) ;
-
+	iis2dlpc_conf_set () ;
 	iis2dlpc_int_notification_set ( &iis2dlpc_ctx , IIS2DLPC_LIR ) ;
-
-	iis2dlpc_conf_print ();
+	iis2dlpc_conf_print () ;
 
   /* USER CODE END 2 */
 
@@ -373,6 +366,17 @@ static void iis2dlpc_int1_print (void)
 	sprintf ( (char *)dbg_tx_buff , "IIS2DLPC_INT1_Pin state: %d\r\n" , (uint8_t)HAL_GPIO_ReadPin ( IIS2DLPC_INT1_GPIO_Port , IIS2DLPC_INT1_Pin ) ) ;
 	dbg_tx ( dbg_tx_buff , strlen ( (char const*)dbg_tx_buff ) ) ;
 }
+/* get and print to dbg IIS2DLPC raw temp */
+static void iis2dlpc_temp_print (void)
+{
+	iis2dlpc_temperature_raw_get ( &iis2dlpc_ctx , &iis2dlpc_temp_reg ) ;
+
+	int8_t temp_integer = iis2dlpc_temp_reg >> 8 ;
+	uint8_t temp_fraction = (uint8_t)iis2dlpc_temp_reg ;
+
+	sprintf ( (char *)dbg_tx_buff , "IIS2DLPC temp is %d.%d\r\n" , 25 + temp_integer , temp_fraction * 10 / 255 ) ;
+	dbg_tx ( dbg_tx_buff , strlen ( (char const*)dbg_tx_buff ) ) ;
+}
 
 static void	iis2dlpc_conf_set ( void )
 {
@@ -472,6 +476,7 @@ void HAL_GPIO_EXTI_Callback ( uint16_t GPIO_Pin )
 	sprintf ( (char*)dbg_tx_buff , "INT1 detected!\n" ) ;
 	dbg_tx ( dbg_tx_buff, strlen ( (char const*)dbg_tx_buff) ) ;
 
+	iis2dlpc_temp_print();
 	iis2dlpc_int1_print();
 }
 
