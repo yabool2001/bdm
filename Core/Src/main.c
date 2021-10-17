@@ -467,11 +467,30 @@ static void	iis2dlpc_conf_print	( void )
  */
 static void dbg_tx ( uint8_t* tx_buff , uint16_t len ) { HAL_UART_Transmit ( &DBG , tx_buff , len , 1000 ); }
 
+/* Przetestowałem ale nie widzę uzasadnienia do wprowadzania
+ * Tak by wyglądały przykłąd dwóch wierszy wywołujących funkcję
+ * const char* message = "INT1 detected!\n" ;
+ * dbg_print ( message ) ;
+static void dbg_print ( const char* message )
+{
+	sprintf ( (char*)dbg_tx_buff , message ) ;
+	dbg_tx ( dbg_tx_buff , strlen ( (char const*)dbg_tx_buff ) ) ;
+}
+*/
+
 void HAL_GPIO_EXTI_Callback ( uint16_t GPIO_Pin )
 {
 	iis2dlpc_int1_print();
 
 	iis2dlpc_all_sources_get ( &iis2dlpc_ctx , &all_source ) ;
+	/* wersja szybsz odczytująca tylko przerwania niezbędne do wakepu
+	iis2dlpc_read_reg ( &iis2dlpc_ctx , IIS2DLPC_ALL_INT_SRC , &reg8bit , 1 ) ;
+	sprintf ( (char *)dbg_tx_buff , "IIS2DLPC_ALL_INT_SRC: %d\r\n" , reg8bit ) ;
+	dbg_tx ( dbg_tx_buff , strlen ( (char const*)dbg_tx_buff ) ) ;
+	*/
+	iis2dlpc_sixd_src_t sixd = all_source.sixd_src ;
+	sprintf ( (char*)dbg_tx_buff , "6D[XL,HX,YL,YH,ZL,ZH]: %d%d%d%d%d%d\n" , sixd.xl , sixd.xh , sixd.yl , sixd.yh , sixd.zl , sixd.zh ) ;
+	dbg_tx ( dbg_tx_buff, strlen ( (char const*)dbg_tx_buff) ) ;
 
 	sprintf ( (char*)dbg_tx_buff , "INT1 detected!\n" ) ;
 	dbg_tx ( dbg_tx_buff, strlen ( (char const*)dbg_tx_buff) ) ;

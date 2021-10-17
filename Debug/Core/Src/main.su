@@ -7,8 +7,8 @@ main.c:330:16:platform_write	32	static
 main.c:351:16:platform_read	32	static
 main.c:363:13:iis2dlpc_int1_print	8	static
 main.c:370:13:iis2dlpc_temp_print	24	static
-main.c:383:13:iis2dlpc_conf_set	8	static
-main.c:429:13:iis2dlpc_conf_print	8	static
-main.c:470:13:dbg_tx	24	static
-main.c:472:6:HAL_GPIO_EXTI_Callback	16	static
-main.c:491:6:Error_Handler	8	static,ignoring_inline_asm
+main.c:381:13:iis2dlpc_conf_set	8	static
+main.c:427:13:iis2dlpc_conf_print	8	static
+main.c:468:13:dbg_tx	24	static
+main.c:481:6:HAL_GPIO_EXTI_Callback	56	static
+main.c:508:6:Error_Handler	8	static,ignoring_inline_asm
