@@ -480,19 +480,15 @@ static void dbg_print ( const char* message )
 
 void HAL_GPIO_EXTI_Callback ( uint16_t GPIO_Pin )
 {
-	iis2dlpc_int1_print();
-
-	iis2dlpc_all_sources_get ( &iis2dlpc_ctx , &all_source ) ;
-	/* wersja szybsz odczytująca tylko przerwania niezbędne do wakepu
-	iis2dlpc_read_reg ( &iis2dlpc_ctx , IIS2DLPC_ALL_INT_SRC , &reg8bit , 1 ) ;
-	sprintf ( (char *)dbg_tx_buff , "IIS2DLPC_ALL_INT_SRC: %d\r\n" , reg8bit ) ;
-	dbg_tx ( dbg_tx_buff , strlen ( (char const*)dbg_tx_buff ) ) ;
-	*/
-	iis2dlpc_sixd_src_t sixd = all_source.sixd_src ;
-	sprintf ( (char*)dbg_tx_buff , "6D[XL,HX,YL,YH,ZL,ZH]: %d%d%d%d%d%d\n" , sixd.xl , sixd.xh , sixd.yl , sixd.yh , sixd.zl , sixd.zh ) ;
+	sprintf ( (char*)dbg_tx_buff , "INT on GPIO_Pin %d detected!\n" , GPIO_Pin ) ;
 	dbg_tx ( dbg_tx_buff, strlen ( (char const*)dbg_tx_buff) ) ;
 
-	sprintf ( (char*)dbg_tx_buff , "INT1 detected!\n" ) ;
+	iis2dlpc_all_sources_get ( &iis2dlpc_ctx , &all_source ) ;
+
+	sprintf ( (char*)dbg_tx_buff , "Wake up SRC[FF_IA,SS_IA,WU_IA,X_WU,Y_WU,Z_WU]: %d%d%d%d%d%d\n" , all_source.wake_up_src.ff_ia , all_source.wake_up_src.sleep_state_ia , all_source.wake_up_src.wu_ia , all_source.wake_up_src.x_wu , all_source.wake_up_src.y_wu , all_source.wake_up_src.z_wu ) ;
+	dbg_tx ( dbg_tx_buff, strlen ( (char const*)dbg_tx_buff) ) ;
+
+	sprintf ( (char*)dbg_tx_buff , "6D[XL,HX,YL,YH,ZL,ZH]: %d%d%d%d%d%d\n" , all_source.sixd_src.xl , all_source.sixd_src.xh , all_source.sixd_src.yl , all_source.sixd_src.yh , all_source.sixd_src.zl , all_source.sixd_src.zh ) ;
 	dbg_tx ( dbg_tx_buff, strlen ( (char const*)dbg_tx_buff) ) ;
 
 	iis2dlpc_temp_print();
