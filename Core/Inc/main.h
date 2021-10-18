@@ -58,8 +58,22 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
+#define BG96_UART1_AP_READY_Pin GPIO_PIN_0
+#define BG96_UART1_AP_READY_GPIO_Port GPIOH
+#define BG96_PWRKEY_Pin GPIO_PIN_0
+#define BG96_PWRKEY_GPIO_Port GPIOB
+#define BG96_RESET_N_Pin GPIO_PIN_1
+#define BG96_RESET_N_GPIO_Port GPIOB
+#define BG96_STATUS_Pin GPIO_PIN_2
+#define BG96_STATUS_GPIO_Port GPIOB
 #define IIS2DLPC_CS_Pin GPIO_PIN_11
 #define IIS2DLPC_CS_GPIO_Port GPIOB
+#define BG96_UART1_DTR_Pin GPIO_PIN_12
+#define BG96_UART1_DTR_GPIO_Port GPIOB
+#define BG96_UART1_DCD_Pin GPIO_PIN_14
+#define BG96_UART1_DCD_GPIO_Port GPIOB
+#define BG96_PS_Pin GPIO_PIN_15
+#define BG96_PS_GPIO_Port GPIOB
 #define IIS2DLPC_SHDN_Pin GPIO_PIN_8
 #define IIS2DLPC_SHDN_GPIO_Port GPIOA
 #define IIS2DLPC_INT1_Pin GPIO_PIN_8
