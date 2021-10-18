@@ -61,12 +61,20 @@ UART_HandleTypeDef huart4;
 UART_HandleTypeDef huart5;
 
 /* USER CODE BEGIN PV */
-static uint8_t iis2dlpc_whoami_reg = 0, rst = 0 , reg8bit = 0 ;
-static int16_t iis2dlpc_temp_reg = 0 ;
+
+/* Private global variables */
+static uint8_t reg8bit = 0 ;
+
+/* DBG private global variables */
 static uint8_t dbg_tx_buff[300] ;
+
+/* IIS2DLPC private global variables */
+static uint8_t iis2dlpc_whoami_reg = 0, rst = 0 ;
+static int16_t iis2dlpc_temp_reg = 0 ;
 static stmdev_ctx_t iis2dlpc_ctx;
 static iis2dlpc_reg_t iis2dlpc_int_route;
 static iis2dlpc_all_sources_t all_source;
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -77,13 +85,19 @@ static void MX_USART5_UART_Init(void);
 static void MX_USART4_UART_Init(void);
 /* USER CODE BEGIN PFP */
 
+/* DBG function prototypes */
+static void		dbg_tx					( uint8_t* tx_buff , uint16_t len ) ;
+
+/* IIS2DLPC function prototypes */
 static int32_t	platform_write			( void *handle , uint8_t reg , const uint8_t *bufp , uint16_t len ) ;
 static int32_t	platform_read			( void *handle , uint8_t reg , uint8_t *bufp , uint16_t len ) ;
-static void		dbg_tx					( uint8_t* tx_buff , uint16_t len ) ;
 static void		iis2dlpc_int1_print		( void ) ;
 static void		iis2dlpc_temp_print		( void ) ;
 static void		iis2dlpc_conf_set		( void ) ;
 static void		iis2dlpc_conf_print		( void ) ;
+
+/* IIS2DLPC function prototypes */
+static void		bg96_status_print		( void ) ;
 
 /* USER CODE END PFP */
 
@@ -124,13 +138,26 @@ int main(void)
   MX_USART5_UART_Init();
   MX_USART4_UART_Init();
   /* USER CODE BEGIN 2 */
+
+	/* IIS2DLPC configuration */
 	iis2dlpc_ctx.write_reg = platform_write ;
 	iis2dlpc_ctx.read_reg = platform_read ;
 	iis2dlpc_ctx.handle = &IIS2DLPC_BUS ;
-
 	iis2dlpc_conf_set () ;
 	iis2dlpc_int_notification_set ( &iis2dlpc_ctx , IIS2DLPC_LIR ) ;
 	iis2dlpc_conf_print () ;
+
+	/* BG96 configuration */
+	bg96_status_print () ;
+	HAL_GPIO_WritePin ( BG96_PS_GPIO_Port , BG96_PS_Pin , GPIO_PIN_SET ) ;
+	HAL_GPIO_WritePin ( BG96_RESET_N_GPIO_Port , BG96_RESET_N_Pin , GPIO_PIN_SET ) ;
+	HAL_GPIO_WritePin ( BG96_PWRKEY_GPIO_Port , BG96_PWRKEY_Pin , GPIO_PIN_SET ) ;
+	HAL_Delay ( 50 ) ;
+	HAL_GPIO_WritePin ( BG96_PWRKEY_GPIO_Port , BG96_PWRKEY_Pin , GPIO_PIN_RESET ) ;
+	HAL_Delay ( 1000 ) ;
+	HAL_GPIO_WritePin ( BG96_PWRKEY_GPIO_Port , BG96_PWRKEY_Pin , GPIO_PIN_SET ) ;
+	HAL_Delay ( 5000 ) ;
+	bg96_status_print () ;
 
   /* USER CODE END 2 */
 
@@ -138,25 +165,7 @@ int main(void)
   /* USER CODE BEGIN WHILE */
 	while (1)
 	{
-		//iis2dlpc_all_sources_t all_source;
 
-		/* Check Wake-Up events */
-		/*
-		iis2dlpc_all_sources_get ( &iis2dlpc_ctx , &all_source ) ;
-
-		if ( all_source.wake_up_src.wu_ia )
-		{
-			sprintf ( (char *)dbg_tx_buff , "Wake-Up event on " ) ;
-			if ( all_source.wake_up_src.x_wu )
-				strcat ( (char*)dbg_tx_buff , "X" ) ;
-			if ( all_source.wake_up_src.y_wu )
-				strcat ( (char *)dbg_tx_buff, "Y" ) ;
-			if ( all_source.wake_up_src.z_wu )
-				strcat ( (char*)dbg_tx_buff , "Z" ) ;
-			strcat ( (char *)dbg_tx_buff , " direction\r\n" ) ;
-		    dbg_tx ( dbg_tx_buff , strlen ( (char const*)dbg_tx_buff ) ) ;
-		}
-		*/
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -420,9 +429,14 @@ static int32_t platform_read ( void *handle , uint8_t reg , uint8_t *bufp , uint
 	return 0;
 }
 
+static void bg96_status_print (void)
+{
+	sprintf ( (char *)dbg_tx_buff , "BG96_STATUS_Pin state: %d\r\n" , (uint8_t)HAL_GPIO_ReadPin ( BG96_STATUS_GPIO_Port , BG96_STATUS_Pin ) ) ;
+	dbg_tx ( dbg_tx_buff , strlen ( (char const*)dbg_tx_buff ) ) ;
+}
+
 static void iis2dlpc_int1_print (void)
 {
-	HAL_GPIO_ReadPin ( IIS2DLPC_INT1_GPIO_Port , IIS2DLPC_INT1_Pin ) ;
 	sprintf ( (char *)dbg_tx_buff , "IIS2DLPC_INT1_Pin state: %d\r\n" , (uint8_t)HAL_GPIO_ReadPin ( IIS2DLPC_INT1_GPIO_Port , IIS2DLPC_INT1_Pin ) ) ;
 	dbg_tx ( dbg_tx_buff , strlen ( (char const*)dbg_tx_buff ) ) ;
 }
@@ -553,6 +567,7 @@ void HAL_GPIO_EXTI_Callback ( uint16_t GPIO_Pin )
 
 	iis2dlpc_temp_print();
 	iis2dlpc_int1_print();
+	bg96_status_print () ;
 }
 
 /* USER CODE END 4 */
