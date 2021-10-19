@@ -63,10 +63,12 @@ UART_HandleTypeDef huart5;
 /* USER CODE BEGIN PV */
 
 /* Private global variables */
+HAL_StatusTypeDef hs ;
 static uint8_t reg8bit = 0 ;
 
 /* DBG private global variables */
-static uint8_t dbg_tx_buff[300] ;
+static uint8_t uart_tx_buff[300] ;
+static uint8_t uart_rx_buff[20] = { 65 , 66 , 67 , 68 , 69 , 0 } ;
 
 /* IIS2DLPC private global variables */
 static uint8_t iis2dlpc_whoami_reg = 0, rst = 0 ;
@@ -74,6 +76,11 @@ static int16_t iis2dlpc_temp_reg = 0 ;
 static stmdev_ctx_t iis2dlpc_ctx;
 static iis2dlpc_reg_t iis2dlpc_int_route;
 static iis2dlpc_all_sources_t all_source;
+
+/* BG96 private global variables */
+
+/* temp private global variables */
+//static uint8_t ati[] = { 65 , 84 , 73 , 13 , 0 } ;
 
 /* USER CODE END PV */
 
@@ -86,19 +93,22 @@ static void MX_USART4_UART_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* DBG function prototypes */
-static void		dbg_tx					( uint8_t* tx_buff , uint16_t len ) ;
+static void		dbg_tx						( uint8_t* tx_buff , uint16_t len ) ;
 
 /* IIS2DLPC function prototypes */
-static int32_t	platform_write			( void *handle , uint8_t reg , const uint8_t *bufp , uint16_t len ) ;
-static int32_t	platform_read			( void *handle , uint8_t reg , uint8_t *bufp , uint16_t len ) ;
-static uint8_t	iis2dlpc_int1_print		( void ) ;
-static void		iis2dlpc_temp_print		( void ) ;
-static void		iis2dlpc_conf_set		( void ) ;
-static void		iis2dlpc_conf_print		( void ) ;
+static int32_t	platform_write				( void *handle , uint8_t reg , const uint8_t *bufp , uint16_t len ) ;
+static int32_t	platform_read				( void *handle , uint8_t reg , uint8_t *bufp , uint16_t len ) ;
+static uint8_t	iis2dlpc_int1_print			( void ) ;
+static void		iis2dlpc_temp_print			( void ) ;
+static void		iis2dlpc_conf_set			( void ) ;
+static void		iis2dlpc_conf_print			( void ) ;
 
 /* BG96 function prototypes */
-static uint8_t	bg96_status_print		( void ) ;
-static uint8_t	bg96_ps_on				( void ) ;
+static void		bg96_uart1_tx				( uint8_t* tx_buff , uint16_t len ) ;
+static void		bg96_uart1_rx_buff_print	( void ) ;
+static void		bg96_uart1_tx_ati			( void ) ;
+static uint8_t	bg96_status_print			( void ) ;
+static uint8_t	bg96_ps_on					( void ) ;
 
 /* USER CODE END PFP */
 
@@ -150,14 +160,15 @@ int main(void)
 
 	/* BG96 configuration */
 	bg96_ps_on () ;
-
+	bg96_uart1_tx_ati () ;
+	//bg96_uart1_rx_buff_print () ;
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
 	while (1)
 	{
-
+		hs = HAL_UART_Receive ( &BG96_UART1 , uart_rx_buff , sizeof ( uart_rx_buff ) , 1000 ) ;
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -263,7 +274,7 @@ static void MX_USART4_UART_Init(void)
   huart4.Init.StopBits = UART_STOPBITS_1;
   huart4.Init.Parity = UART_PARITY_NONE;
   huart4.Init.Mode = UART_MODE_TX_RX;
-  huart4.Init.HwFlowCtl = UART_HWCONTROL_RTS_CTS;
+  huart4.Init.HwFlowCtl = UART_HWCONTROL_NONE;
   huart4.Init.OverSampling = UART_OVERSAMPLING_16;
   huart4.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
   huart4.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
@@ -385,6 +396,9 @@ static void MX_GPIO_Init(void)
 
 /* USER CODE BEGIN 4 */
 
+/* Global function */
+
+
 /* IIS2DLPC function */
 /*
  * @brief  Write generic device register (platform dependent)
@@ -432,8 +446,8 @@ static int32_t platform_read ( void *handle , uint8_t reg , uint8_t *bufp , uint
 static uint8_t iis2dlpc_int1_print ( void )
 {
 	uint8_t r = (uint8_t)HAL_GPIO_ReadPin ( IIS2DLPC_INT1_GPIO_Port , IIS2DLPC_INT1_Pin ) ;
-	sprintf ( (char *)dbg_tx_buff , "IIS2DLPC_INT1_Pin: %d\r\n" , r ) ;
-	dbg_tx ( dbg_tx_buff , strlen ( (char const*)dbg_tx_buff ) ) ;
+	sprintf ( (char *)uart_tx_buff , "IIS2DLPC_INT1_Pin: %d\r\n" , r ) ;
+	dbg_tx ( uart_tx_buff , strlen ( (char const*)uart_tx_buff ) ) ;
 	return r ;
 }
 
@@ -445,8 +459,8 @@ static void iis2dlpc_temp_print ( void )
 	int8_t temp_integer = iis2dlpc_temp_reg >> 8 ;
 	uint8_t temp_fraction = (uint8_t)iis2dlpc_temp_reg ;
 
-	sprintf ( (char *)dbg_tx_buff , "IIS2DLPC temp is %d.%d\r\n" , 25 + temp_integer , temp_fraction * 10 / 255 ) ;
-	dbg_tx ( dbg_tx_buff , strlen ( (char const*)dbg_tx_buff ) ) ;
+	sprintf ( (char *)uart_tx_buff , "IIS2DLPC temp is %d.%d\r\n" , 25 + temp_integer , temp_fraction * 10 / 255 ) ;
+	dbg_tx ( uart_tx_buff , strlen ( (char const*)uart_tx_buff ) ) ;
 }
 
 static void	iis2dlpc_conf_set ( void )
@@ -454,8 +468,8 @@ static void	iis2dlpc_conf_set ( void )
 	iis2dlpc_device_id_get ( &iis2dlpc_ctx , &iis2dlpc_whoami_reg ) ;
 	if ( iis2dlpc_whoami_reg == IIS2DLPC_ID )
 	{
-		sprintf ( (char*)dbg_tx_buff , "Hello! My name is %d\n", iis2dlpc_whoami_reg ) ;
-		dbg_tx ( dbg_tx_buff, strlen ( (char const*)dbg_tx_buff) ) ;
+		sprintf ( (char*)uart_tx_buff , "Hello! My name is %d\n", iis2dlpc_whoami_reg ) ;
+		dbg_tx ( uart_tx_buff, strlen ( (char const*)uart_tx_buff) ) ;
 	}
 	else
 	{
@@ -498,36 +512,36 @@ static void	iis2dlpc_conf_set ( void )
 static void	iis2dlpc_conf_print	( void )
 {
 	iis2dlpc_wkup_threshold_get ( &iis2dlpc_ctx , &reg8bit ) ;
-	sprintf ( (char *)dbg_tx_buff , "WAKE_UP_THS: %d\r\n" , reg8bit ) ;
-	dbg_tx ( dbg_tx_buff , strlen ( (char const*)dbg_tx_buff ) ) ;
+	sprintf ( (char *)uart_tx_buff , "WAKE_UP_THS: %d\r\n" , reg8bit ) ;
+	dbg_tx ( uart_tx_buff , strlen ( (char const*)uart_tx_buff ) ) ;
 
 	iis2dlpc_read_reg ( &iis2dlpc_ctx , IIS2DLPC_CTRL1 , &reg8bit , 1 ) ;
-	sprintf ( (char *)dbg_tx_buff , "CTRL1: %d\r\n" , reg8bit ) ;
-	dbg_tx ( dbg_tx_buff , strlen ( (char const*)dbg_tx_buff ) ) ;
+	sprintf ( (char *)uart_tx_buff , "CTRL1: %d\r\n" , reg8bit ) ;
+	dbg_tx ( uart_tx_buff , strlen ( (char const*)uart_tx_buff ) ) ;
 
 	iis2dlpc_read_reg ( &iis2dlpc_ctx , IIS2DLPC_CTRL3 , &reg8bit , 1 ) ;
-	sprintf ( (char *)dbg_tx_buff , "CTRL3: %d\r\n" , reg8bit ) ;
-	dbg_tx ( dbg_tx_buff , strlen ( (char const*)dbg_tx_buff ) ) ;
+	sprintf ( (char *)uart_tx_buff , "CTRL3: %d\r\n" , reg8bit ) ;
+	dbg_tx ( uart_tx_buff , strlen ( (char const*)uart_tx_buff ) ) ;
 
 	iis2dlpc_read_reg ( &iis2dlpc_ctx , IIS2DLPC_CTRL4_INT1_PAD_CTRL , &reg8bit , 1 ) ;
-	sprintf ( (char *)dbg_tx_buff , "CTRL4: %d\r\n" , reg8bit ) ;
-	dbg_tx ( dbg_tx_buff , strlen ( (char const*)dbg_tx_buff ) ) ;
+	sprintf ( (char *)uart_tx_buff , "CTRL4: %d\r\n" , reg8bit ) ;
+	dbg_tx ( uart_tx_buff , strlen ( (char const*)uart_tx_buff ) ) ;
 
 	iis2dlpc_read_reg ( &iis2dlpc_ctx , IIS2DLPC_CTRL5_INT2_PAD_CTRL , &reg8bit , 1 ) ;
-	sprintf ( (char *)dbg_tx_buff , "CTRL5: %d\r\n" , reg8bit ) ;
-	dbg_tx ( dbg_tx_buff , strlen ( (char const*)dbg_tx_buff ) ) ;
+	sprintf ( (char *)uart_tx_buff , "CTRL5: %d\r\n" , reg8bit ) ;
+	dbg_tx ( uart_tx_buff , strlen ( (char const*)uart_tx_buff ) ) ;
 
 	iis2dlpc_read_reg ( &iis2dlpc_ctx , IIS2DLPC_CTRL6 , &reg8bit , 1 ) ;
-	sprintf ( (char *)dbg_tx_buff , "CTRL6: %d\r\n" , reg8bit ) ;
-	dbg_tx ( dbg_tx_buff , strlen ( (char const*)dbg_tx_buff ) ) ;
+	sprintf ( (char *)uart_tx_buff , "CTRL6: %d\r\n" , reg8bit ) ;
+	dbg_tx ( uart_tx_buff , strlen ( (char const*)uart_tx_buff ) ) ;
 
 	iis2dlpc_read_reg ( &iis2dlpc_ctx , IIS2DLPC_STATUS , &reg8bit , 1 ) ;
-	sprintf ( (char *)dbg_tx_buff , "STATUS: %d\r\n" , reg8bit ) ;
-	dbg_tx ( dbg_tx_buff , strlen ( (char const*)dbg_tx_buff ) ) ;
+	sprintf ( (char *)uart_tx_buff , "STATUS: %d\r\n" , reg8bit ) ;
+	dbg_tx ( uart_tx_buff , strlen ( (char const*)uart_tx_buff ) ) ;
 
 	iis2dlpc_read_reg ( &iis2dlpc_ctx , IIS2DLPC_WAKE_UP_SRC , &reg8bit , 1 ) ;
-	sprintf ( (char *)dbg_tx_buff , "WAKE_UP_SRC: %d\r\n" , reg8bit ) ;
-	dbg_tx ( dbg_tx_buff , strlen ( (char const*)dbg_tx_buff ) ) ;
+	sprintf ( (char *)uart_tx_buff , "WAKE_UP_SRC: %d\r\n" , reg8bit ) ;
+	dbg_tx ( uart_tx_buff , strlen ( (char const*)uart_tx_buff ) ) ;
 }
 
 /* CBG function */
@@ -549,8 +563,8 @@ static void dbg_tx ( uint8_t* tx_buff , uint16_t len )
  * dbg_print ( message ) ;
 static void dbg_print ( const char* message )
 {
-	sprintf ( (char*)dbg_tx_buff , message ) ;
-	dbg_tx ( dbg_tx_buff , strlen ( (char const*)dbg_tx_buff ) ) ;
+	sprintf ( (char*)uart_tx_buff , message ) ;
+	dbg_tx ( uart_tx_buff , strlen ( (char const*)uart_tx_buff ) ) ;
 }
 */
 
@@ -558,8 +572,8 @@ static void dbg_print ( const char* message )
 static uint8_t bg96_status_print ( void )
 {
 	uint8_t r = (uint8_t)HAL_GPIO_ReadPin ( BG96_STATUS_GPIO_Port , BG96_STATUS_Pin ) ;
-	sprintf ( (char *)dbg_tx_buff , "BG96_STATUS_Pin: %d\r\n" , r ) ;
-	dbg_tx ( dbg_tx_buff , strlen ( (char const*)dbg_tx_buff ) ) ;
+	sprintf ( (char *)uart_tx_buff , "BG96_STATUS_Pin: %d\r\n" , r ) ;
+	dbg_tx ( uart_tx_buff , strlen ( (char const*)uart_tx_buff ) ) ;
 	return r ;
 }
 static uint8_t bg96_ps_on ( void )
@@ -576,23 +590,40 @@ static uint8_t bg96_ps_on ( void )
 	return bg96_status_print () ;
 
 }
+static void bg96_uart1_tx ( uint8_t* tx_buff , uint16_t len )
+//docelowo połączyć z dbg_tx
+{
+	HAL_UART_Transmit ( &BG96_UART1 , tx_buff , len , 1000 ) ;
+}
+static void bg96_uart1_rx_buff_print ( void )
+{
+	sprintf ( (char *)uart_tx_buff , "BG96 UART1 RX: %s\r\n" , (const char*)uart_rx_buff ) ;
+	dbg_tx ( uart_tx_buff , (uint16_t)strlen ( (const char*)uart_tx_buff ) ) ;
+}
+static void bg96_uart1_tx_ati ( void )
+{
+	sprintf ( (char *)uart_tx_buff , "ATI\r" ) ;
+	bg96_uart1_tx ( uart_tx_buff , strlen ( (const char *)uart_tx_buff ) ) ;
+}
+
 
 void HAL_GPIO_EXTI_Callback ( uint16_t GPIO_Pin )
 {
-	sprintf ( (char*)dbg_tx_buff , "INT on GPIO_Pin %d detected!\n" , GPIO_Pin ) ;
-	dbg_tx ( dbg_tx_buff, strlen ( (char const*)dbg_tx_buff) ) ;
+	sprintf ( (char*)uart_tx_buff , "INT on GPIO_Pin %d detected!\n" , GPIO_Pin ) ;
+	dbg_tx ( uart_tx_buff, strlen ( (char const*)uart_tx_buff) ) ;
 
 	iis2dlpc_all_sources_get ( &iis2dlpc_ctx , &all_source ) ;
 
-	sprintf ( (char*)dbg_tx_buff , "Wake up SRC[FF_IA,SS_IA,WU_IA,X_WU,Y_WU,Z_WU]: %d%d%d%d%d%d\n" , all_source.wake_up_src.ff_ia , all_source.wake_up_src.sleep_state_ia , all_source.wake_up_src.wu_ia , all_source.wake_up_src.x_wu , all_source.wake_up_src.y_wu , all_source.wake_up_src.z_wu ) ;
-	dbg_tx ( dbg_tx_buff, strlen ( (char const*)dbg_tx_buff) ) ;
+	sprintf ( (char*)uart_tx_buff , "Wake up SRC[FF_IA,SS_IA,WU_IA,X_WU,Y_WU,Z_WU]: %d%d%d%d%d%d\n" , all_source.wake_up_src.ff_ia , all_source.wake_up_src.sleep_state_ia , all_source.wake_up_src.wu_ia , all_source.wake_up_src.x_wu , all_source.wake_up_src.y_wu , all_source.wake_up_src.z_wu ) ;
+	dbg_tx ( uart_tx_buff, strlen ( (char const*)uart_tx_buff) ) ;
 
-	sprintf ( (char*)dbg_tx_buff , "6D[XL,HX,YL,YH,ZL,ZH]: %d%d%d%d%d%d\n" , all_source.sixd_src.xl , all_source.sixd_src.xh , all_source.sixd_src.yl , all_source.sixd_src.yh , all_source.sixd_src.zl , all_source.sixd_src.zh ) ;
-	dbg_tx ( dbg_tx_buff, strlen ( (char const*)dbg_tx_buff) ) ;
+	sprintf ( (char*)uart_tx_buff , "6D[XL,HX,YL,YH,ZL,ZH]: %d%d%d%d%d%d\n" , all_source.sixd_src.xl , all_source.sixd_src.xh , all_source.sixd_src.yl , all_source.sixd_src.yh , all_source.sixd_src.zl , all_source.sixd_src.zh ) ;
+	dbg_tx ( uart_tx_buff, strlen ( (char const*)uart_tx_buff) ) ;
 
 	iis2dlpc_temp_print();
 	iis2dlpc_int1_print();
 	bg96_status_print () ;
+	bg96_uart1_rx_buff_print () ;
 }
 
 /* USER CODE END 4 */
