@@ -91,13 +91,14 @@ static void		dbg_tx					( uint8_t* tx_buff , uint16_t len ) ;
 /* IIS2DLPC function prototypes */
 static int32_t	platform_write			( void *handle , uint8_t reg , const uint8_t *bufp , uint16_t len ) ;
 static int32_t	platform_read			( void *handle , uint8_t reg , uint8_t *bufp , uint16_t len ) ;
-static void		iis2dlpc_int1_print		( void ) ;
+static uint8_t	iis2dlpc_int1_print		( void ) ;
 static void		iis2dlpc_temp_print		( void ) ;
 static void		iis2dlpc_conf_set		( void ) ;
 static void		iis2dlpc_conf_print		( void ) ;
 
-/* IIS2DLPC function prototypes */
-static void		bg96_status_print		( void ) ;
+/* BG96 function prototypes */
+static uint8_t	bg96_status_print		( void ) ;
+static uint8_t	bg96_ps_on				( void ) ;
 
 /* USER CODE END PFP */
 
@@ -148,16 +149,7 @@ int main(void)
 	iis2dlpc_conf_print () ;
 
 	/* BG96 configuration */
-	bg96_status_print () ;
-	HAL_GPIO_WritePin ( BG96_PS_GPIO_Port , BG96_PS_Pin , GPIO_PIN_SET ) ;
-	HAL_GPIO_WritePin ( BG96_RESET_N_GPIO_Port , BG96_RESET_N_Pin , GPIO_PIN_SET ) ;
-	HAL_GPIO_WritePin ( BG96_PWRKEY_GPIO_Port , BG96_PWRKEY_Pin , GPIO_PIN_SET ) ;
-	HAL_Delay ( 50 ) ;
-	HAL_GPIO_WritePin ( BG96_PWRKEY_GPIO_Port , BG96_PWRKEY_Pin , GPIO_PIN_RESET ) ;
-	HAL_Delay ( 1000 ) ;
-	HAL_GPIO_WritePin ( BG96_PWRKEY_GPIO_Port , BG96_PWRKEY_Pin , GPIO_PIN_SET ) ;
-	HAL_Delay ( 5000 ) ;
-	bg96_status_print () ;
+	bg96_ps_on () ;
 
   /* USER CODE END 2 */
 
@@ -360,11 +352,17 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : BG96_STATUS_Pin BG96_UART1_DCD_Pin */
-  GPIO_InitStruct.Pin = BG96_STATUS_Pin|BG96_UART1_DCD_Pin;
+  /*Configure GPIO pin : BG96_STATUS_Pin */
+  GPIO_InitStruct.Pin = BG96_STATUS_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  HAL_GPIO_Init(BG96_STATUS_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : BG96_UART1_DCD_Pin */
+  GPIO_InitStruct.Pin = BG96_UART1_DCD_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+  HAL_GPIO_Init(BG96_UART1_DCD_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pin : IIS2DLPC_SHDN_Pin */
   GPIO_InitStruct.Pin = IIS2DLPC_SHDN_Pin;
@@ -386,6 +384,8 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+
+/* IIS2DLPC function */
 /*
  * @brief  Write generic device register (platform dependent)
  *
@@ -429,19 +429,16 @@ static int32_t platform_read ( void *handle , uint8_t reg , uint8_t *bufp , uint
 	return 0;
 }
 
-static void bg96_status_print (void)
+static uint8_t iis2dlpc_int1_print ( void )
 {
-	sprintf ( (char *)dbg_tx_buff , "BG96_STATUS_Pin state: %d\r\n" , (uint8_t)HAL_GPIO_ReadPin ( BG96_STATUS_GPIO_Port , BG96_STATUS_Pin ) ) ;
+	uint8_t r = (uint8_t)HAL_GPIO_ReadPin ( IIS2DLPC_INT1_GPIO_Port , IIS2DLPC_INT1_Pin ) ;
+	sprintf ( (char *)dbg_tx_buff , "IIS2DLPC_INT1_Pin: %d\r\n" , r ) ;
 	dbg_tx ( dbg_tx_buff , strlen ( (char const*)dbg_tx_buff ) ) ;
+	return r ;
 }
 
-static void iis2dlpc_int1_print (void)
-{
-	sprintf ( (char *)dbg_tx_buff , "IIS2DLPC_INT1_Pin state: %d\r\n" , (uint8_t)HAL_GPIO_ReadPin ( IIS2DLPC_INT1_GPIO_Port , IIS2DLPC_INT1_Pin ) ) ;
-	dbg_tx ( dbg_tx_buff , strlen ( (char const*)dbg_tx_buff ) ) ;
-}
 /* get and print to dbg IIS2DLPC raw temp */
-static void iis2dlpc_temp_print (void)
+static void iis2dlpc_temp_print ( void )
 {
 	iis2dlpc_temperature_raw_get ( &iis2dlpc_ctx , &iis2dlpc_temp_reg ) ;
 
@@ -532,6 +529,8 @@ static void	iis2dlpc_conf_print	( void )
 	sprintf ( (char *)dbg_tx_buff , "WAKE_UP_SRC: %d\r\n" , reg8bit ) ;
 	dbg_tx ( dbg_tx_buff , strlen ( (char const*)dbg_tx_buff ) ) ;
 }
+
+/* CBG function */
 /*
  * @brief  Write generic device register (platform dependent)
  *
@@ -539,7 +538,10 @@ static void	iis2dlpc_conf_print	( void )
  * @param  len           number of byte to send
  *
  */
-static void dbg_tx ( uint8_t* tx_buff , uint16_t len ) { HAL_UART_Transmit ( &DBG , tx_buff , len , 1000 ); }
+static void dbg_tx ( uint8_t* tx_buff , uint16_t len )
+{
+	HAL_UART_Transmit ( &DBG , tx_buff , len , 1000 ) ;
+}
 
 /* Przetestowałem ale nie widzę uzasadnienia do wprowadzania
  * Tak by wyglądały przykłąd dwóch wierszy wywołujących funkcję
@@ -551,6 +553,29 @@ static void dbg_print ( const char* message )
 	dbg_tx ( dbg_tx_buff , strlen ( (char const*)dbg_tx_buff ) ) ;
 }
 */
+
+/* BG96 function */
+static uint8_t bg96_status_print ( void )
+{
+	uint8_t r = (uint8_t)HAL_GPIO_ReadPin ( BG96_STATUS_GPIO_Port , BG96_STATUS_Pin ) ;
+	sprintf ( (char *)dbg_tx_buff , "BG96_STATUS_Pin: %d\r\n" , r ) ;
+	dbg_tx ( dbg_tx_buff , strlen ( (char const*)dbg_tx_buff ) ) ;
+	return r ;
+}
+static uint8_t bg96_ps_on ( void )
+{
+	bg96_status_print () ;
+	HAL_GPIO_WritePin ( BG96_PS_GPIO_Port , BG96_PS_Pin , GPIO_PIN_SET ) ;
+	HAL_GPIO_WritePin ( BG96_RESET_N_GPIO_Port , BG96_RESET_N_Pin , GPIO_PIN_SET ) ;
+	HAL_GPIO_WritePin ( BG96_PWRKEY_GPIO_Port , BG96_PWRKEY_Pin , GPIO_PIN_SET ) ;
+	HAL_Delay ( 35 ) ;
+	HAL_GPIO_WritePin ( BG96_PWRKEY_GPIO_Port , BG96_PWRKEY_Pin , GPIO_PIN_RESET ) ;
+	HAL_Delay ( 550 ) ;
+	HAL_GPIO_WritePin ( BG96_PWRKEY_GPIO_Port , BG96_PWRKEY_Pin , GPIO_PIN_SET ) ;
+	HAL_Delay ( 4500 ) ;
+	return bg96_status_print () ;
+
+}
 
 void HAL_GPIO_EXTI_Callback ( uint16_t GPIO_Pin )
 {
