@@ -68,7 +68,7 @@ static uint8_t reg8bit = 0 ;
 
 /* DBG private global variables */
 static uint8_t uart_tx_buff[300] ;
-static uint8_t uart_rx_buff[20] = { 65 , 66 , 67 , 68 , 69 , 0 } ;
+static uint8_t uart_rx_buff[10] = { 65 , 66 , 67 , 68 , 69 , 0 } ;
 
 /* IIS2DLPC private global variables */
 static uint8_t iis2dlpc_whoami_reg = 0, rst = 0 ;
@@ -160,15 +160,16 @@ int main(void)
 
 	/* BG96 configuration */
 	bg96_ps_on () ;
-	bg96_uart1_tx_ati () ;
-	//bg96_uart1_rx_buff_print () ;
+	bg96_uart1_rx_buff_print () ;
+	//bg96_uart1_tx_ati () ;
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
 	while (1)
 	{
-		hs = HAL_UART_Receive ( &BG96_UART1 , uart_rx_buff , sizeof ( uart_rx_buff ) , 1000 ) ;
+		//hs = HAL_UART_Receive ( &BG96_UART1 , uart_rx_buff , sizeof ( uart_rx_buff ) , 1000 ) ;
+		hs = HAL_UART_Receive ( &DBG , uart_rx_buff , sizeof ( uart_rx_buff ) , 1000 ) ;
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -269,7 +270,7 @@ static void MX_USART4_UART_Init(void)
 
   /* USER CODE END USART4_Init 1 */
   huart4.Instance = USART4;
-  huart4.Init.BaudRate = 115200;
+  huart4.Init.BaudRate = 9600;
   huart4.Init.WordLength = UART_WORDLENGTH_8B;
   huart4.Init.StopBits = UART_STOPBITS_1;
   huart4.Init.Parity = UART_PARITY_NONE;
@@ -624,6 +625,7 @@ void HAL_GPIO_EXTI_Callback ( uint16_t GPIO_Pin )
 	iis2dlpc_int1_print();
 	bg96_status_print () ;
 	bg96_uart1_rx_buff_print () ;
+	hs = 0 ;
 }
 
 /* USER CODE END 4 */
