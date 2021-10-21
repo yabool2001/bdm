@@ -94,6 +94,7 @@ static void MX_USART4_UART_Init(void);
 
 /* DBG function prototypes */
 static void		dbg_tx						( uint8_t* tx_buff , uint16_t len ) ;
+static void		uart_rx_buff_print			( void ) ;
 
 /* IIS2DLPC function prototypes */
 static int32_t	platform_write				( void *handle , uint8_t reg , const uint8_t *bufp , uint16_t len ) ;
@@ -105,7 +106,6 @@ static void		iis2dlpc_conf_print			( void ) ;
 
 /* BG96 function prototypes */
 static void		bg96_uart1_tx				( uint8_t* tx_buff , uint16_t len ) ;
-static void		bg96_uart1_rx_buff_print	( void ) ;
 static void		bg96_uart1_tx_ati			( void ) ;
 static uint8_t	bg96_status_print			( void ) ;
 static uint8_t	bg96_ps_on					( void ) ;
@@ -160,7 +160,7 @@ int main(void)
 
 	/* BG96 configuration */
 	bg96_ps_on () ;
-	bg96_uart1_rx_buff_print () ;
+	uart_rx_buff_print () ;
 	//bg96_uart1_tx_ati () ;
   /* USER CODE END 2 */
 
@@ -169,7 +169,6 @@ int main(void)
 	while (1)
 	{
 		//hs = HAL_UART_Receive ( &BG96_UART1 , uart_rx_buff , sizeof ( uart_rx_buff ) , 1000 ) ;
-		hs = HAL_UART_Receive ( &DBG , uart_rx_buff , sizeof ( uart_rx_buff ) , 1000 ) ;
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -270,7 +269,7 @@ static void MX_USART4_UART_Init(void)
 
   /* USER CODE END USART4_Init 1 */
   huart4.Instance = USART4;
-  huart4.Init.BaudRate = 9600;
+  huart4.Init.BaudRate = 115200;
   huart4.Init.WordLength = UART_WORDLENGTH_8B;
   huart4.Init.StopBits = UART_STOPBITS_1;
   huart4.Init.Parity = UART_PARITY_NONE;
@@ -553,6 +552,8 @@ static void	iis2dlpc_conf_print	( void )
  * @param  len           number of byte to send
  *
  */
+
+/* DBG functions */
 static void dbg_tx ( uint8_t* tx_buff , uint16_t len )
 {
 	HAL_UART_Transmit ( &DBG , tx_buff , len , 1000 ) ;
@@ -568,6 +569,11 @@ static void dbg_print ( const char* message )
 	dbg_tx ( uart_tx_buff , strlen ( (char const*)uart_tx_buff ) ) ;
 }
 */
+static void uart_rx_buff_print ( void )
+{
+	sprintf ( (char *)uart_tx_buff , "UART Rx: %s\r\n" , (const char*)uart_rx_buff ) ;
+	dbg_tx ( uart_tx_buff , (uint16_t)strlen ( (const char*)uart_tx_buff ) ) ;
+}
 
 /* BG96 function */
 static uint8_t bg96_status_print ( void )
@@ -596,18 +602,13 @@ static void bg96_uart1_tx ( uint8_t* tx_buff , uint16_t len )
 {
 	HAL_UART_Transmit ( &BG96_UART1 , tx_buff , len , 1000 ) ;
 }
-static void bg96_uart1_rx_buff_print ( void )
-{
-	sprintf ( (char *)uart_tx_buff , "BG96 UART1 RX: %s\r\n" , (const char*)uart_rx_buff ) ;
-	dbg_tx ( uart_tx_buff , (uint16_t)strlen ( (const char*)uart_tx_buff ) ) ;
-}
 static void bg96_uart1_tx_ati ( void )
 {
 	sprintf ( (char *)uart_tx_buff , "ATI\r" ) ;
 	bg96_uart1_tx ( uart_tx_buff , strlen ( (const char *)uart_tx_buff ) ) ;
 }
 
-
+/* EXTI_Callback functions */
 void HAL_GPIO_EXTI_Callback ( uint16_t GPIO_Pin )
 {
 	sprintf ( (char*)uart_tx_buff , "INT on GPIO_Pin %d detected!\n" , GPIO_Pin ) ;
@@ -624,8 +625,7 @@ void HAL_GPIO_EXTI_Callback ( uint16_t GPIO_Pin )
 	iis2dlpc_temp_print();
 	iis2dlpc_int1_print();
 	bg96_status_print () ;
-	bg96_uart1_rx_buff_print () ;
-	hs = 0 ;
+	uart_rx_buff_print () ;
 }
 
 /* USER CODE END 4 */
