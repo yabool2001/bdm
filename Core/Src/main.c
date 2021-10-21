@@ -41,7 +41,7 @@
 
 #define IIS2DLPC_BUS hspi1
 #define IIS2DLPC_WAKEUP_THS 4
-#define IIS2DLPC_WAKEUP_DUR 3
+#define IIS2DLPC_WAKEUP_DUR 2
 #define IIS2DLPC_LIR 1
 
 #define BG96_UART1 huart4
@@ -107,6 +107,7 @@ static void		iis2dlpc_conf_print			( void ) ;
 /* BG96 function prototypes */
 static void		bg96_uart1_tx				( uint8_t* tx_buff , uint16_t len ) ;
 static void		bg96_uart1_tx_ati			( void ) ;
+static void		bg96_uart1_tx_atqpowd		( void ) ;
 static uint8_t	bg96_status_print			( void ) ;
 static uint8_t	bg96_ps_on					( void ) ;
 
@@ -161,14 +162,14 @@ int main(void)
 	/* BG96 configuration */
 	bg96_ps_on () ;
 	uart_rx_buff_print () ;
-	//bg96_uart1_tx_ati () ;
+	bg96_uart1_tx_ati () ;
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
 	while (1)
 	{
-		//hs = HAL_UART_Receive ( &BG96_UART1 , uart_rx_buff , sizeof ( uart_rx_buff ) , 1000 ) ;
+		hs = HAL_UART_Receive ( &BG96_UART1 , uart_rx_buff , sizeof ( uart_rx_buff ) , 1000 ) ;
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -333,31 +334,17 @@ static void MX_GPIO_Init(void)
   GPIO_InitTypeDef GPIO_InitStruct = {0};
 
   /* GPIO Ports Clock Enable */
-  __HAL_RCC_GPIOH_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(BG96_UART1_AP_READY_GPIO_Port, BG96_UART1_AP_READY_Pin, GPIO_PIN_RESET);
-
-  /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOB, BG96_PWRKEY_Pin|BG96_RESET_N_Pin|IIS2DLPC_CS_Pin|BG96_UART1_DTR_Pin
-                          |BG96_PS_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOB, BG96_PWRKEY_Pin|BG96_RESET_N_Pin|IIS2DLPC_CS_Pin|BG96_PS_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(IIS2DLPC_SHDN_GPIO_Port, IIS2DLPC_SHDN_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pin : BG96_UART1_AP_READY_Pin */
-  GPIO_InitStruct.Pin = BG96_UART1_AP_READY_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(BG96_UART1_AP_READY_GPIO_Port, &GPIO_InitStruct);
-
-  /*Configure GPIO pins : BG96_PWRKEY_Pin BG96_RESET_N_Pin IIS2DLPC_CS_Pin BG96_UART1_DTR_Pin
-                           BG96_PS_Pin */
-  GPIO_InitStruct.Pin = BG96_PWRKEY_Pin|BG96_RESET_N_Pin|IIS2DLPC_CS_Pin|BG96_UART1_DTR_Pin
-                          |BG96_PS_Pin;
+  /*Configure GPIO pins : BG96_PWRKEY_Pin BG96_RESET_N_Pin IIS2DLPC_CS_Pin BG96_PS_Pin */
+  GPIO_InitStruct.Pin = BG96_PWRKEY_Pin|BG96_RESET_N_Pin|IIS2DLPC_CS_Pin|BG96_PS_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -368,12 +355,6 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(BG96_STATUS_GPIO_Port, &GPIO_InitStruct);
-
-  /*Configure GPIO pin : BG96_UART1_DCD_Pin */
-  GPIO_InitStruct.Pin = BG96_UART1_DCD_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(BG96_UART1_DCD_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pin : IIS2DLPC_SHDN_Pin */
   GPIO_InitStruct.Pin = IIS2DLPC_SHDN_Pin;
@@ -607,6 +588,12 @@ static void bg96_uart1_tx_ati ( void )
 	sprintf ( (char *)uart_tx_buff , "ATI\r" ) ;
 	bg96_uart1_tx ( uart_tx_buff , strlen ( (const char *)uart_tx_buff ) ) ;
 }
+static void bg96_uart1_tx_atqpowd ( void )
+{
+	sprintf ( (char *)uart_tx_buff , "AT+QPOWD\r" ) ;
+	bg96_uart1_tx ( uart_tx_buff , strlen ( (const char *)uart_tx_buff ) ) ;
+}
+
 
 /* EXTI_Callback functions */
 void HAL_GPIO_EXTI_Callback ( uint16_t GPIO_Pin )
@@ -625,6 +612,7 @@ void HAL_GPIO_EXTI_Callback ( uint16_t GPIO_Pin )
 	iis2dlpc_temp_print();
 	iis2dlpc_int1_print();
 	bg96_status_print () ;
+	bg96_uart1_tx_ati () ;
 	uart_rx_buff_print () ;
 }
 
