@@ -68,7 +68,7 @@ static uint8_t reg8bit = 0 ;
 
 /* DBG private global variables */
 static uint8_t uart_tx_buff[300] ;
-static uint8_t uart_rx_buff[10] = { 65 , 66 , 67 , 68 , 69 , 0 } ;
+static uint8_t uart_rx_buff[3] = { 65 , 66 , 67 } ;
 
 /* IIS2DLPC private global variables */
 static uint8_t iis2dlpc_whoami_reg = 0, rst = 0 ;
@@ -107,7 +107,6 @@ static void		iis2dlpc_conf_print			( void ) ;
 /* BG96 function prototypes */
 static void		bg96_uart1_tx				( uint8_t* tx_buff , uint16_t len ) ;
 static void		bg96_uart1_tx_ati			( void ) ;
-static void		bg96_uart1_tx_atqpowd		( void ) ;
 static uint8_t	bg96_status_print			( void ) ;
 static uint8_t	bg96_ps_on					( void ) ;
 
@@ -161,15 +160,15 @@ int main(void)
 
 	/* BG96 configuration */
 	bg96_ps_on () ;
-	uart_rx_buff_print () ;
 	bg96_uart1_tx_ati () ;
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
 	while (1)
 	{
-		hs = HAL_UART_Receive ( &BG96_UART1 , uart_rx_buff , sizeof ( uart_rx_buff ) , 1000 ) ;
+		HAL_UART_Receive ( &BG96_UART1 , uart_rx_buff , strlen ( uart_rx_buff ) , 1000 ) ;
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -588,14 +587,8 @@ static void bg96_uart1_tx_ati ( void )
 	sprintf ( (char *)uart_tx_buff , "ATI\r" ) ;
 	bg96_uart1_tx ( uart_tx_buff , strlen ( (const char *)uart_tx_buff ) ) ;
 }
-static void bg96_uart1_tx_atqpowd ( void )
-{
-	sprintf ( (char *)uart_tx_buff , "AT+QPOWD\r" ) ;
-	bg96_uart1_tx ( uart_tx_buff , strlen ( (const char *)uart_tx_buff ) ) ;
-}
 
-
-/* EXTI_Callback functions */
+/* Callback functions */
 void HAL_GPIO_EXTI_Callback ( uint16_t GPIO_Pin )
 {
 	sprintf ( (char*)uart_tx_buff , "INT on GPIO_Pin %d detected!\n" , GPIO_Pin ) ;
@@ -615,6 +608,7 @@ void HAL_GPIO_EXTI_Callback ( uint16_t GPIO_Pin )
 	bg96_uart1_tx_ati () ;
 	uart_rx_buff_print () ;
 }
+
 
 /* USER CODE END 4 */
 
