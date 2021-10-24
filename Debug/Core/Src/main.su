@@ -17,4 +17,5 @@ main.c:566:16:bg96_ps_on	8	static
 main.c:580:13:bg96_uart1_tx	24	static
 main.c:585:13:bg96_uart1_tx_ati	8	static
 main.c:592:6:HAL_GPIO_EXTI_Callback	48	static
-main.c:619:6:Error_Handler	8	static,ignoring_inline_asm
+main.c:611:6:HAL_UART_RxCpltCallback	16	static
+main.c:622:6:Error_Handler	8	static,ignoring_inline_asm

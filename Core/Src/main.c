@@ -168,7 +168,7 @@ int main(void)
   /* USER CODE BEGIN WHILE */
 	while (1)
 	{
-		HAL_UART_Receive ( &BG96_UART1 , uart_rx_buff , strlen ( uart_rx_buff ) , 1000 ) ;
+		HAL_UART_Receive_IT ( &BG96_UART1 , uart_rx_buff , strlen ( uart_rx_buff ) ) ;
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -274,7 +274,7 @@ static void MX_USART4_UART_Init(void)
   huart4.Init.StopBits = UART_STOPBITS_1;
   huart4.Init.Parity = UART_PARITY_NONE;
   huart4.Init.Mode = UART_MODE_TX_RX;
-  huart4.Init.HwFlowCtl = UART_HWCONTROL_RTS_CTS;
+  huart4.Init.HwFlowCtl = UART_HWCONTROL_NONE;
   huart4.Init.OverSampling = UART_OVERSAMPLING_16;
   huart4.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
   huart4.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
@@ -606,9 +606,12 @@ void HAL_GPIO_EXTI_Callback ( uint16_t GPIO_Pin )
 	iis2dlpc_int1_print();
 	bg96_status_print () ;
 	bg96_uart1_tx_ati () ;
+	//uart_rx_buff_print () ;
+}
+void HAL_UART_RxCpltCallback ( UART_HandleTypeDef *huart )
+{
 	uart_rx_buff_print () ;
 }
-
 
 /* USER CODE END 4 */
 
