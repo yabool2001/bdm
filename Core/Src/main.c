@@ -92,6 +92,9 @@ static void MX_USART5_UART_Init(void);
 static void MX_USART4_UART_Init(void);
 /* USER CODE BEGIN PFP */
 
+/* GLOBAL function prototypes */
+int _write(int file, char *ptr, int len) ;
+
 /* DBG function prototypes */
 static void		dbg_tx						( uint8_t* tx_buff , uint16_t len ) ;
 static void		uart_rx_buff_print			( void ) ;
@@ -160,7 +163,7 @@ int main(void)
 
 	/* BG96 configuration */
 	bg96_ps_on () ;
-	bg96_uart1_tx_ati () ;
+	//bg96_uart1_tx_ati () ;
 
   /* USER CODE END 2 */
 
@@ -168,7 +171,7 @@ int main(void)
   /* USER CODE BEGIN WHILE */
 	while (1)
 	{
-		HAL_UART_Receive_IT ( &BG96_UART1 , uart_rx_buff , strlen ( uart_rx_buff ) ) ;
+		//HAL_UART_Receive_IT ( &BG96_UART1 , uart_rx_buff , strlen ( uart_rx_buff ) ) ;
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -534,13 +537,18 @@ static void	iis2dlpc_conf_print	( void )
  */
 
 /* DBG functions */
+int _write ( int file , char* ptr , int len )
+{
+	hs = HAL_UART_Transmit ( &DBG , (uint8_t*)ptr , (uint16_t)len , 1000 ) ;
+	return hs ;
+}
 static void dbg_tx ( uint8_t* tx_buff , uint16_t len )
 {
 	HAL_UART_Transmit ( &DBG , tx_buff , len , 1000 ) ;
 }
 
 /* Przetestowałem ale nie widzę uzasadnienia do wprowadzania
- * Tak by wyglądały przykłąd dwóch wierszy wywołujących funkcję
+ * Tak by wyglądały przykład dwóch wierszy wywołujących funkcję
  * const char* message = "INT1 detected!\n" ;
  * dbg_print ( message ) ;
 static void dbg_print ( const char* message )
@@ -551,8 +559,9 @@ static void dbg_print ( const char* message )
 */
 static void uart_rx_buff_print ( void )
 {
-	sprintf ( (char *)uart_tx_buff , "UART Rx: %s\r\n" , (const char*)uart_rx_buff ) ;
-	dbg_tx ( uart_tx_buff , (uint16_t)strlen ( (const char*)uart_tx_buff ) ) ;
+	/*sprintf ( (char *)uart_tx_buff , "UART Rx: %s\r\n" , (const char*)uart_rx_buff ) ;
+	dbg_tx ( uart_tx_buff , (uint16_t)strlen ( (const char*)uart_tx_buff ) ) ;*/
+	printf ( "UART Rx: %s\r\n" , (char*)uart_rx_buff ) ;
 }
 
 /* BG96 function */
@@ -606,7 +615,7 @@ void HAL_GPIO_EXTI_Callback ( uint16_t GPIO_Pin )
 	iis2dlpc_int1_print();
 	bg96_status_print () ;
 	bg96_uart1_tx_ati () ;
-	//uart_rx_buff_print () ;
+	uart_rx_buff_print () ;
 }
 void HAL_UART_RxCpltCallback ( UART_HandleTypeDef *huart )
 {
