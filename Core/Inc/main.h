@@ -73,6 +73,7 @@ void Error_Handler(void);
 #define IIS2DLPC_INT1_Pin GPIO_PIN_8
 #define IIS2DLPC_INT1_GPIO_Port GPIOB
 #define IIS2DLPC_INT1_EXTI_IRQn EXTI4_15_IRQn
+
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */
@@ -82,5 +83,3 @@ void Error_Handler(void);
 #endif
 
 #endif /* __MAIN_H */
-
-/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
